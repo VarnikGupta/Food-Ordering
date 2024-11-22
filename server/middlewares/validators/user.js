@@ -30,19 +30,17 @@ const loginValidator = [
 const updateValidator = [
   oneOf(
     [
-      body("name").optional(),
-      body("address").optional(),
+      body("name").exists().withMessage("Name is required"),
+      body("address").exists().withMessage("Address is required"),
       body("password")
         .isLength({ min: 8 })
-        .withMessage("Password must be at least 8 characters long")
-        .optional(),
+        .withMessage("Password must be at least 8 characters long"),
       body("phone")
-        .isLength(10)
+        .isLength({ min: 10, max: 10 })
         .withMessage("Enter a valid phone number")
-        .optional(),
-    ],
+   ],
     {
-      message: "At least one fields should be present",
+      message: "At least one field from name, address, password, phone must be provided",
     }
   ),
 ];

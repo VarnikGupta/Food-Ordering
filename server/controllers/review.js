@@ -1,16 +1,32 @@
-const createReview = async (req, res) => {
-  const { restId, userId, rating, feedback, createdAt, userName, restName } =
-    req.body;
+const { documentClient } = require("../database/db");
+const { validationResult } = require("express-validator");
 
+const validateBody = validationResult.withDefaults({
+  formatter: (err) => {
+    return {
+      err: true,
+      message: err.msg,
+    };
+  },
+});
+
+const createReview = async (req, res) => {
+  const errors = validateBody(req);
+  if (!errors.isEmpty()) {
+    const { err, message } = errors.array({ onlyFirstError: true })[0];
+    return res.status(422).json({ err, message });
+  }
+  const { restId, userId, rating, feedback, userName, restName } = req.body;
+  const createdAt = Math.floor(Date.now() / 1000);
   try {
     const getRestParams = {
       TableName: "FoodOrdering",
       Key: {
-        PK: `Rest#${resIid}`,
+        PK: `Rest#${restId}`,
         SK: "RestDetails",
       },
     };
-    const restResult = await dynamoDB.get(getRestParams).promise();
+    const restResult = await documentClient.get(getRestParams).promise();
     if (!restResult.Item) {
       res.status(404).json({ message: "Restaurant not found" });
     }
@@ -23,7 +39,7 @@ const createReview = async (req, res) => {
       },
     };
 
-    const userResult = await dynamoDB.get(getUserParams).promise();
+    const userResult = await documentClient.get(getUserParams).promise();
     if (!userResult.Item) {
       res.status(404).json({ message: "User not found" });
     }
@@ -58,17 +74,17 @@ const createReview = async (req, res) => {
             #ratingCount = #ratingCount + :one
         `,
       ExpressionAttributeNames: {
-        "#rating": "Rating",
-        "#ratingCount": "Ratingcount",
+        "#rating": "rating",
+        "#ratingCount": "ratingCount",
       },
       ExpressionAttributeValues: {
-        ":newRating": newRating,
+        ":newRating": rating,
         ":one": 1,
       },
       ReturnValues: "UPDATED_NEW",
     };
 
-    const result = await dynamoDB.update(updateRatingParams).promise();
+    const result = await documentClient.update(updateRatingParams).promise();
     return res.status(201).json({
       success: true,
       message: "Review created successfully",
@@ -132,7 +148,9 @@ const getReviews = async (req, res) => {
     }
     const result = await dynamoDB.query(queryParams).promise();
     const reviews = result.Items || [];
-    return res.status(200).json({ reviews, message: "User reviews fetched successfully" });
+    return res
+      .status(200)
+      .json({ reviews, message: "User reviews fetched successfully" });
   } catch (error) {
     console.error("Error querying reviews:", error);
     return {
