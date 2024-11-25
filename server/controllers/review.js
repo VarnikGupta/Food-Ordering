@@ -18,7 +18,9 @@ const createReview = async (req, res) => {
   }
   const { restId, userId, rating, feedback, userName, restName } = req.body;
   const createdAt = Math.floor(Date.now() / 1000);
+
   try {
+    // Fetch the restaurant details
     const getRestParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -28,9 +30,10 @@ const createReview = async (req, res) => {
     };
     const restResult = await documentClient.get(getRestParams).promise();
     if (!restResult.Item) {
-      res.status(404).json({ message: "Restaurant not found" });
+      return res.status(404).json({ message: "Restaurant not found" });
     }
 
+    // Fetch the user details
     const getUserParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -38,12 +41,12 @@ const createReview = async (req, res) => {
         SK: "Profile",
       },
     };
-
     const userResult = await documentClient.get(getUserParams).promise();
     if (!userResult.Item) {
-      res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
+    // Insert the new review
     const params = {
       TableName: "FoodOrdering",
       Item: {
@@ -51,16 +54,24 @@ const createReview = async (req, res) => {
         SK: `Review#${createdAt}#${restId}`,
         GSI1_PK: `Rest#${restId}`,
         GSI1_SK: `Review#${createdAt}`,
-        userId: userId,
-        restId: restId,
-        userName: userName,
-        restName: restName,
-        feedback: feedback,
-        rating: rating,
-        createdAt: createdAt,
+        userId,
+        restId,
+        userName,
+        restName,
+        feedback,
+        rating,
+        createdAt,
       },
     };
     await documentClient.put(params).promise();
+
+    // Calculate new rating and update restaurant details
+    const currentRating = restResult.Item.rating || 0;
+    const currentRatingCount = restResult.Item.ratingCount || 0;
+
+    const newRating =
+      (currentRating * currentRatingCount + rating) / (currentRatingCount + 1);
+    const newRatingCount = currentRatingCount + 1;
 
     const updateRatingParams = {
       TableName: "FoodOrdering",
@@ -69,22 +80,23 @@ const createReview = async (req, res) => {
         SK: "RestDetails",
       },
       UpdateExpression: `
-          SET 
-            #rating = ((#rating * #ratingCount) + :newRating) / (#ratingCount + :one),
-            #ratingCount = #ratingCount + :one
-        `,
+        SET 
+          #rating = :newRating,
+          #ratingCount = :newRatingCount
+      `,
       ExpressionAttributeNames: {
         "#rating": "rating",
         "#ratingCount": "ratingCount",
       },
       ExpressionAttributeValues: {
-        ":newRating": rating,
-        ":one": 1,
+        ":newRating": newRating,
+        ":newRatingCount": newRatingCount,
       },
       ReturnValues: "UPDATED_NEW",
     };
 
-    const result = await documentClient.update(updateRatingParams).promise();
+    await documentClient.update(updateRatingParams).promise();
+
     return res.status(201).json({
       success: true,
       message: "Review created successfully",
@@ -99,7 +111,8 @@ const createReview = async (req, res) => {
 };
 
 const getReviews = async (req, res) => {
-  const { userId, restaurantId } = queryParams;
+  const { userId, restId } = req.query;
+  console.log(userId, restId);
   let queryParams;
   if (userId) {
     queryParams = {
@@ -110,47 +123,51 @@ const getReviews = async (req, res) => {
         ":sk": "Review#",
       },
     };
-  } else if (restaurantId) {
+  } else if (restId) {
     queryParams = {
       TableName: "FoodOrdering",
-      IndexName: GSI1,
-      KeyConditionExpression: "PK = :pk and begins_with(SK, :sk)",
+      IndexName: "GSI1",
+      KeyConditionExpression: "GSI1_PK = :pk and begins_with(GSI1_SK, :sk)",
       ExpressionAttributeValues: {
-        ":pk": `Rest#${restaurantId}`,
+        ":pk": `Rest#${restId}`,
         ":sk": "Review#",
       },
     };
   }
   try {
-    const getRestParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `Rest#${resIid}`,
-        SK: "RestDetails",
-      },
-    };
-    const restResult = await dynamoDB.get(getRestParams).promise();
-    if (!restResult.Item) {
-      res.status(404).json({ message: "Restaurant not found" });
+    if (restId) {
+      const getRestParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `Rest#${restId}`,
+          SK: "RestDetails",
+        },
+      };
+      const restResult = await documentClient.get(getRestParams).promise();
+      if (!restResult.Item) {
+        res.status(404).json({ message: "Restaurant not found" });
+      }
     }
 
-    const getUserParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${userId}`,
-        SK: "Profile",
-      },
-    };
+    if (userId) {
+      const getUserParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `User#${userId}`,
+          SK: "Profile",
+        },
+      };
 
-    const userResult = await dynamoDB.get(getUserParams).promise();
-    if (!userResult.Item) {
-      res.status(404).json({ message: "User not found" });
+      const userResult = await documentClient.get(getUserParams).promise();
+      if (!userResult.Item) {
+        res.status(404).json({ message: "User not found" });
+      }
     }
-    const result = await dynamoDB.query(queryParams).promise();
+    const result = await documentClient.query(queryParams).promise();
     const reviews = result.Items || [];
     return res
       .status(200)
-      .json({ reviews, message: "User reviews fetched successfully" });
+      .json({ reviews, message: "Reviews fetched successfully" });
   } catch (error) {
     console.error("Error querying reviews:", error);
     return {
