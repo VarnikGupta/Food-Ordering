@@ -13,6 +13,7 @@ const validateBody = validationResult.withDefaults({
 
 const getOrderHistory = async (req, res) => {
   const { userId } = req.params;
+  console.log(userId);
   try {
     const getUserParams = {
       TableName: "FoodOrdering",
@@ -22,14 +23,14 @@ const getOrderHistory = async (req, res) => {
       },
     };
 
-    const userResult = await dynamoDB.get(getUserParams).promise();
+    const userResult = await documentClient.get(getUserParams).promise();
     if (!userResult.Item) {
       res.status(404).json({ message: "User not found" });
     }
     const getOrderHistoryParams = {
       TableName: "FoodOrdering",
       IndexName: "LSI1",
-      KeyConditionExpression: "PK = :pk AND LSI1_SK = begins_with(:sk)",
+      KeyConditionExpression: "PK = :pk AND begins_with(LSI1_SK,:sk)",
       ExpressionAttributeValues: {
         ":pk": `User#${userId}`,
         ":sk": "Order#",
@@ -39,12 +40,10 @@ const getOrderHistory = async (req, res) => {
     const orderHistory = result.Items.map((order) => ({
       orderId: order.orderId,
       userId: order.userId,
-      restaurantId: order.restaurantId,
-      restaurantName: order.restaurantName,
       orderDate: order.orderDate,
       status: order.status,
       restName: order.restName,
-      restId: restId,
+      restId: order.restId,
       deliveryAddress: order.deliveryAddress,
       isFavourite: order.isFavourite,
       totalAmount: order.totalAmount,
@@ -60,7 +59,7 @@ const getOrderHistory = async (req, res) => {
       orderHistory,
     });
   } catch (err) {
-    console.error("Error fetching order history:", error);
+    console.error("Error fetching order history:", err);
     return res.status(500).json({ err: true, message: err.message });
   }
 };
@@ -68,6 +67,18 @@ const getOrderHistory = async (req, res) => {
 const getOrderDetails = async (req, res) => {
   const { userId, orderId } = req.params;
   try {
+    const getUserParams = {
+      TableName: "FoodOrdering",
+      Key: {
+        PK: `User#${userId}`,
+        SK: "Profile",
+      },
+    };
+
+    const userResult = await documentClient.get(getUserParams).promise();
+    if (!userResult.Item) {
+      res.status(404).json({ message: "User not found" });
+    }
     const params = {
       TableName: "FoodOrdering",
       Key: {
@@ -76,14 +87,14 @@ const getOrderDetails = async (req, res) => {
       },
     };
 
-    const result = await dynamoDB.get(params).promise();
+    const result = await documentClient.get(params).promise();
 
     if (!result.Item) {
       res.status(400).json({ message: "Order not found" });
     }
     return res.json({
       message: "Order fetched successfully",
-      user: result.Item,
+      order: result.Item,
     });
   } catch (err) {
     console.error("Error fetching order details:", err);
@@ -108,7 +119,7 @@ const createOrder = async (req, res) => {
       SK: "Profile",
     },
   };
-  const userResult = await dynamoDB.get(userQueryParams).promise();
+  const userResult = await documentClient.get(userQueryParams).promise();
   if (!userResult.Item) {
     res.status(400).json({ message: "User not found" });
   }
@@ -116,11 +127,13 @@ const createOrder = async (req, res) => {
   const restaurantQueryParams = {
     TableName: "FoodOrdering",
     Key: {
-      PK: `Rest#${restaurantId}`,
+      PK: `Rest#${restId}`,
       SK: "RestDetails",
     },
   };
-  const restaurantResult = await dynamoDB.get(restaurantQueryParams).promise();
+  const restaurantResult = await documentClient
+    .get(restaurantQueryParams)
+    .promise();
   if (!restaurantResult.Item) {
     res.status(400).json({ message: "Restaurant not found" });
   }
@@ -166,7 +179,8 @@ const updateOrderStatus = async (req, res) => {
   const { userId, orderId } = req.params;
   const { status } = req.body;
 
-  const errors = validationResult(req);
+  const errors = validateBody(req);
+  console.log(errors, userId, orderId, status);
   if (!errors.isEmpty()) {
     const { err, message } = errors.array({ onlyFirstError: true })[0];
     return res.status(422).json({ err, message });
@@ -179,7 +193,7 @@ const updateOrderStatus = async (req, res) => {
       SK: "Profile",
     },
   };
-  const userResult = await dynamoDB.get(userQueryParams).promise();
+  const userResult = await documentClient.get(userQueryParams).promise();
   if (!userResult.Item) {
     res.status(400).json({ message: "User not found" });
   }
@@ -191,7 +205,7 @@ const updateOrderStatus = async (req, res) => {
       SK: `Order#${orderId}`,
     },
   };
-  const orderResult = await dynamoDB.get(orderQueryParams).promise();
+  const orderResult = await documentClient.get(orderQueryParams).promise();
   if (!orderResult.Item) {
     res.status(400).json({ message: "Order not found" });
   }

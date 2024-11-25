@@ -26,8 +26,9 @@ const addRestaurant = async (req, res) => {
         PK: `Rest#${restId}`,
         SK: "RestDetails",
         GSI1_PK: `Restaurant`,
+        GSI1_SK: `Rest#${restId}`,
         restId: restId,
-        name: name,
+        name: name.toLowerCase(),
         contact: contact,
         location: location,
         rating: 0,
@@ -51,7 +52,7 @@ const addRestaurant = async (req, res) => {
 };
 
 const getRestaurantById = async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id;
   try {
     const params = {
       TableName: "FoodOrdering",
@@ -60,7 +61,7 @@ const getRestaurantById = async (req, res) => {
         SK: "RestDetails",
       },
     };
-    const result = await dynamoDB.get(params).promise();
+    const result = await documentClient.get(params).promise();
     if (!result.Item) {
       res.status(404).json({ message: "Restaurant not found" });
     }
@@ -78,7 +79,7 @@ const getRestaurantById = async (req, res) => {
 
 const getMenu = async (req, res) => {
   const restId = req.params.id;
-
+  console.log(restId);
   try {
     const restaurantQueryParams = {
       TableName: "FoodOrdering",
@@ -87,28 +88,29 @@ const getMenu = async (req, res) => {
         SK: "RestDetails",
       },
     };
-    const restaurantResult = await dynamoDB
+    const restaurantResult = await documentClient
       .get(restaurantQueryParams)
       .promise();
+    console.log("rest profile results", restaurantResult);
     if (!restaurantResult.Item) {
       res.status(404).json({ message: "Restaurant not found" });
     }
 
     const params = {
       TableName: "FoodOrdering",
-      KeyConditionExpression: "PK = :pk and begins_with(SK, :sk)",
+      KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
         ":pk": `Rest#${restId}`,
         ":sk": "Menu#",
       },
     };
 
-    const result = await documentClient.query(params).promise();
-    const menu = result.Items;
+    const existingMenuResult = await documentClient.query(params).promise();
+    console.log(existingMenuResult);
+    const menu = existingMenuResult.Items;
 
     return res.status(200).json({
       success: true,
-      restId,
       menu,
       message: "Menu fetched successfully",
     });
@@ -122,9 +124,26 @@ const getMenu = async (req, res) => {
 };
 
 const updateMenu = async (req, res) => {
-  const { restId } = req.params;
+  const errors = validateBody(req);
+  if (!errors.isEmpty()) {
+    const { err, message } = errors.array({ onlyFirstError: true })[0];
+    return res.status(422).json({ err, message });
+  }
+  const restId = req.params.id;
   const { menuItems } = req.body;
   try {
+    const getRestaurantParams = {
+      TableName: "FoodOrdering",
+      Key: {
+        PK: `Rest#${restId}`,
+        SK: "RestDetails",
+      },
+    };
+    const result = await documentClient.get(getRestaurantParams).promise();
+    console.log(result.Item);
+    if (!result.Item) {
+      res.status(404).json({ message: "Restaurant not found" });
+    }
     const params = {
       TableName: "FoodOrdering",
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
@@ -135,6 +154,7 @@ const updateMenu = async (req, res) => {
     };
 
     const existingMenuResult = await documentClient.query(params).promise();
+    console.log("existing", existingMenuResult);
     const existingMenu = existingMenuResult.Items || [];
 
     const existingMenuMap = existingMenu.reduce((map, item) => {
@@ -146,11 +166,14 @@ const updateMenu = async (req, res) => {
       const existingItem = existingMenuMap[dishName];
       const updatedItem = {
         PK: `Rest#${restId}`,
-        SK: `Menu#${dishName}`,
+        SK: `Menu#${dishName.toLowerCase()}`,
+        GSI1_PK: `Dish#${dishName.toLowerCase()}`,
+        GSI1_SK: `Rest#${restId}`,
         restId: restId,
-        dishName: dishName,
-        cuisine: cuisine || existingItem?.cuisine,
-        category: category || existingItem?.category,
+        restName: result.Item.name,
+        dishName: dishName.toLowerCase(),
+        cuisine: cuisine.toLowerCase() || existingItem?.cuisine,
+        category: category.toLowerCase() || existingItem?.category,
         cost: cost || existingItem?.Cost,
       };
 
@@ -167,7 +190,8 @@ const updateMenu = async (req, res) => {
       },
     };
 
-    await documentClient.batchWrite(batchWriteParams).promise();
+    let resultt = await documentClient.batchWrite(batchWriteParams).promise();
+    console.log(resultt);
 
     return res.status(200).json({
       restaurantId: restId,

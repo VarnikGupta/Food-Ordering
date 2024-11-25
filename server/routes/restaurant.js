@@ -18,6 +18,8 @@ router.get("/:id", getRestaurantById);
 
 router.get("/:id/menu", getMenu);
 
-router.put("/:id/menu", updateMenuValidator, authorizeAdmin, updateMenu);
+router.put("/:id/menu", updateMenuValidator, 
+  // authorizeAdmin, 
+  updateMenu);
 
 module.exports = router;

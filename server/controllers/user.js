@@ -136,9 +136,13 @@ const updateUserDetails = async (req, res) => {
     const { err, message } = errors.array({ onlyFirstError: true })[0];
     return res.status(400).json({ err, message });
   }
+
   try {
-    const { userId } = req.params.id;
+    const userId = req.params.id;
+    console.log(userId);
+
     const { name, password, phone, address } = req.body;
+
     const getUserParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -156,10 +160,12 @@ const updateUserDetails = async (req, res) => {
 
     const updateExpression = [];
     const expressionValues = {};
+    const expressionNames = {};
 
     if (name) {
-      updateExpression.push("name = :name");
+      updateExpression.push("#name = :name");
       expressionValues[":name"] = name;
+      expressionNames["#name"] = "name"; 
     }
 
     if (password) {
@@ -177,19 +183,26 @@ const updateUserDetails = async (req, res) => {
       updateExpression.push("address = :address");
       expressionValues[":address"] = address;
     }
+
+    if (updateExpression.length === 0) {
+      return res.status(400).json({ message: "No fields provided for update" });
+    }
+
     const updateParams = {
       TableName: "FoodOrdering",
-      KeyConditionExpression: "PK = :pk AND SK = :sk",
-      ExpressionAttributeValues: {
-        ":pk": `User#${userId}`,
-        ":sk": "Profile",
+      Key: {
+        PK: `User#${userId}`,
+        SK: "Profile",
       },
       UpdateExpression: `SET ${updateExpression.join(", ")}`,
       ExpressionAttributeValues: expressionValues,
+      ExpressionAttributeNames: expressionNames, 
       ReturnValues: "UPDATED_NEW",
     };
 
-    await dynamoDB.update(updateParams).promise();
+    const updateResult = await documentClient.update(updateParams).promise();
+
+    console.log("Update Result:", updateResult);
 
     return res
       .status(200)

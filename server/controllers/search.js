@@ -1,86 +1,125 @@
+const { validationResult } = require("express-validator");
 const { documentClient } = require("../database/db");
 
-const search = async (req, res) => {
-  const { restName, address, minRating, maxRating, dishName, cost } = req.query;
+const validateBody = validationResult.withDefaults({
+  formatter: (err) => {
+    return {
+      err: true,
+      message: err.msg,
+    };
+  },
+});
 
+const search = async (req, res) => {
+  const errors = validateBody(req);
+  if (!errors.isEmpty()) {
+    const { err, message } = errors.array({ onlyFirstError: true })[0];
+    return res.status(422).json({ err, message });
+  }
+
+  const {
+    restName,
+    address,
+    minRating,
+    maxRating,
+    dishName,
+    minCost,
+    maxCost,
+  } = req.query;
+  console.log(req.query);
   try {
     let params;
+
     if (restName) {
       params = {
         TableName: "FoodOrdering",
         IndexName: "GSI1",
-        KeyConditionExpression: "#pk = :pk",
+        KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
         FilterExpression: "contains(#name, :restName)",
         ExpressionAttributeNames: {
-          "#pk": "PK",
-          "#name": "Name",
-          "#address": "address",
-          "#rating": "Rating",
+          "#pk": "GSI1_PK",
+          "#sk": "GSI1_SK",
+          "#name": "name",
         },
         ExpressionAttributeValues: {
           ":pk": "Restaurant",
-          ":restName": restName || "",
+          ":sk": "Rest#",
+          ":restName": restName.toLowerCase(),
         },
       };
 
+      // Add filters for address if provided
       if (address) {
+        if (address.addressLine) {
+          params.FilterExpression +=
+            " AND contains(#location.#addressLine, :addressLine)";
+          params.ExpressionAttributeValues[":addressLine"] = address.addressLine;
+          params.ExpressionAttributeNames["#location"] = "location";
+          params.ExpressionAttributeNames["#addressLine"] = "addressLine";
+        }
+
         if (address.street) {
-          restaurantParams.FilterExpression = `${
-            restaurantParams.FilterExpression || ""
-          } AND contains(#address.#street, :street)`;
-          restaurantParams.ExpressionAttributeValues[":street"] =
-            address.street;
+          params.FilterExpression +=
+            " AND contains(#location.#street, :street)";
+          params.ExpressionAttributeValues[":street"] = address.street;
+          params.ExpressionAttributeNames["#location"] = "location";
+          params.ExpressionAttributeNames["#street"] = "street";
         }
 
         if (address.state) {
-          restaurantParams.FilterExpression = `${
-            restaurantParams.FilterExpression || ""
-          } AND contains(#address.#state, :state)`;
-          restaurantParams.ExpressionAttributeValues[":state"] = address.state;
+          params.FilterExpression += " AND contains(#location.#state, :state)";
+          params.ExpressionAttributeValues[":state"] = address.state;
+          params.ExpressionAttributeNames["#location"] = "location";
+          params.ExpressionAttributeNames["#state"] = "state";
         }
 
         if (address.country) {
-          restaurantParams.FilterExpression = `${
-            restaurantParams.FilterExpression || ""
-          } AND contains(#address.#country, :country)`;
-          restaurantParams.ExpressionAttributeValues[":country"] =
-            address.country;
+          params.FilterExpression +=
+            " AND contains(#location.#country, :country)";
+          params.ExpressionAttributeValues[":country"] = address.country;
+          params.ExpressionAttributeNames["#location"] = "location";
+          params.ExpressionAttributeNames["#country"] = "country";
         }
       }
 
+      // Add rating filter if min/max ratings are provided
       if (minRating || maxRating) {
-        restaurantParams.FilterExpression = `${
-          restaurantParams.FilterExpression || ""
-        } AND #rating BETWEEN :minRating AND :maxRating`;
-        restaurantParams.ExpressionAttributeValues[":minRating"] =
-          minRating || 1;
-        restaurantParams.ExpressionAttributeValues[":maxRating"] =
-          maxRating || 5;
+        params.FilterExpression += ` AND #rating BETWEEN :minRating AND :maxRating`;
+        params.ExpressionAttributeValues[":minRating"] =
+          parseInt(minRating) || 1;
+        params.ExpressionAttributeValues[":maxRating"] = maxRating || 5;
+        params.ExpressionAttributeNames["#rating"] = "rating";
       }
     } else {
       params = {
         TableName: "FoodOrdering",
         IndexName: "GSI1",
-        KeyConditionExpression: "#pk = :pk",
+        KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
+        FilterExpression: "",
         ExpressionAttributeNames: {
-          "#pk": "PK",
+          "#pk": "GSI1_PK",
+          "#sk": "GSI1_SK",
         },
         ExpressionAttributeValues: {
-          ":pk": `Dish#${dishName}`,
+          ":pk": `Dish#${dishName.toLowerCase()}`,
+          ":sk": `Rest#`,
         },
       };
 
-      if (cost) {
-        dishParams.FilterExpression = "#cost = :cost";
-        dishParams.ExpressionAttributeValues[":cost"] = parseFloat(cost);
+      if (minCost || maxCost) {
+        params.FilterExpression += `#cost BETWEEN :minCost AND :maxCost`;
+        params.ExpressionAttributeValues[":minCost"] = parseInt(minCost) || 1;
+        params.ExpressionAttributeValues[":maxCost"] =
+          parseInt(maxCost) || 10000;
+        params.ExpressionAttributeNames["#cost"] = "cost";
       }
     }
-
+    console.log(params);
     const result = await documentClient.query(params).promise();
 
     return res.status(200).json({
-      message: "search results succesful",
-      restaurants: result.Items,
+      message: "Search results successful",
+      searchItems: result.Items,
     });
   } catch (err) {
     console.error("Error in search:", err);

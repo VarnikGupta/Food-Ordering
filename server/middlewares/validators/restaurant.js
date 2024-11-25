@@ -27,9 +27,9 @@ const updateMenuValidator = [
   body("menuItems.*.cost")
     .isFloat({ gt: 0 })
     .withMessage("Each menu item must have a valid cost greater than 0."),
-  body("menuItems.*.price")
-    .isFloat({ gt: 0 })
-    .withMessage("Each menu item must have a valid price greater than 0."),
+  body("menuItems.*.category")
+    .notEmpty()
+    .withMessage("Each menu item must have a non-empty category."),
 ];
 
 module.exports = { restaurantValidator, updateMenuValidator };
