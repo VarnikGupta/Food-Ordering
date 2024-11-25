@@ -29,6 +29,6 @@ router.get("/:id", isAuthenticated, getUserById);
 
 router.get("/:id/cart", isAuthenticated, getUserCart);
 
-router.put("/:id/cart", updateUserCartValidator, updateUserCart);
+router.put("/:id/cart", updateUserCartValidator, isAuthenticated, updateUserCart);
 
 module.exports = router;

@@ -48,7 +48,6 @@ const search = async (req, res) => {
         },
       };
 
-      // Add filters for address if provided
       if (address) {
         if (address.addressLine) {
           params.FilterExpression +=
@@ -82,7 +81,6 @@ const search = async (req, res) => {
         }
       }
 
-      // Add rating filter if min/max ratings are provided
       if (minRating || maxRating) {
         params.FilterExpression += ` AND #rating BETWEEN :minRating AND :maxRating`;
         params.ExpressionAttributeValues[":minRating"] =

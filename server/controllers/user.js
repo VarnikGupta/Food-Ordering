@@ -165,7 +165,7 @@ const updateUserDetails = async (req, res) => {
     if (name) {
       updateExpression.push("#name = :name");
       expressionValues[":name"] = name;
-      expressionNames["#name"] = "name"; 
+      expressionNames["#name"] = "name";
     }
 
     if (password) {
@@ -196,7 +196,7 @@ const updateUserDetails = async (req, res) => {
       },
       UpdateExpression: `SET ${updateExpression.join(", ")}`,
       ExpressionAttributeValues: expressionValues,
-      ExpressionAttributeNames: expressionNames, 
+      ExpressionAttributeNames: expressionNames,
       ReturnValues: "UPDATED_NEW",
     };
 
@@ -363,7 +363,7 @@ const getUserById = async (req, res) => {
 };
 
 const getUserCart = async (req, res) => {
-  const { id } = req.params.id;
+  const id = req.params.id;
   try {
     const params = {
       TableName: "FoodOrdering",
@@ -374,24 +374,28 @@ const getUserCart = async (req, res) => {
       },
     };
     const result = await documentClient.query(params).promise();
-    const cartItems = result.Items.map((item) => ({
-      dishName: item.dishName,
-      quantity: item.quantity,
-      price: item.price,
-      restId: item.restId,
-      restName: item.restName,
-    }));
+    console.log("item bahar", result.Items);
+    const cartItems = result.Items[0].items.map((item) =>
+      // console.log("item andr",item)
+      ({
+        dishName: item.dishName,
+        quantity: item.quantity,
+        price: item.price,
+        restId: item.restId,
+        restName: item.restName,
+      })
+    );
     const totalAmount = cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
     return res.status(200).json({
-      userid,
+      id,
       cartItems,
       totalAmount,
     });
   } catch (err) {
-    console.error("Error fetching user cart:", error);
+    console.error("Error fetching user cart:", err);
     return res.status(500).json({ err: true, message: err.message });
   }
 };
@@ -402,10 +406,25 @@ const updateUserCart = async (req, res) => {
     const { err, message } = errors.array({ onlyFirstError: true })[0];
     return res.status(400).json({ err, message });
   }
-  const { userId } = req.params;
+  const userId = req.params.id;
   const { action, item } = req.body;
+  console.log(userId, item);
 
   try {
+    // const getUserParams = {
+    //   TableName: "FoodOrdering",
+    //   Key: {
+    //     PK: `User#${userId}`,
+    //     SK: "Profile",
+    //   },
+    // };
+
+    // const userResult = await documentClient.get(getUserParams).promise();
+    // console.log(userResult);
+
+    // if (!userResult.Item) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
     const params = {
       TableName: "FoodOrdering",
       Key: {
@@ -415,12 +434,14 @@ const updateUserCart = async (req, res) => {
     };
 
     const existingCart = await documentClient.get(params).promise();
+    console.log("existing cart", existingCart.Item);
     let cartItems = existingCart.Item?.items || [];
 
     if (action === "add") {
       const existingItem = cartItems.find(
-        (cartItem) => cartItem.name === item.name
+        (cartItem) => cartItem.dishName === item.dishName
       );
+      console.log("existing", existingItem);
 
       if (existingItem) {
         cartItems = cartItems.map((cartItem) =>
@@ -455,10 +476,11 @@ const updateUserCart = async (req, res) => {
       ExpressionAttributeValues: {
         ":items": cartItems,
       },
-      ReturnValues: "UPDATED_NEW",
+      ReturnValues: "ALL_NEW",
     };
 
     const updateResult = await documentClient.update(updateParams).promise();
+    console.log(updateResult.Attributes.items);
 
     return res.status(200).json({
       success: true,

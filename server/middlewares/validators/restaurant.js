@@ -8,7 +8,7 @@ const restaurantValidator = [
   body("contact")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Phone number is required")
-    .isLength(10)
+    .isMobilePhone()
     .withMessage("Enter a valid phone number"),
 ];
 
@@ -17,18 +17,16 @@ const updateMenuValidator = [
     .isArray({ min: 1 })
     .withMessage("menuItems must be a non-empty array."),
   body("menuItems.*.dishName")
-    .isString()
-    .notEmpty()
+    .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Each menu item must have a non-empty dishName."),
   body("menuItems.*.cuisine")
-    .isString()
-    .notEmpty()
+    .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Each menu item must have a non-empty cuisine."),
   body("menuItems.*.cost")
-    .isFloat({ gt: 0 })
+    .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Each menu item must have a valid cost greater than 0."),
   body("menuItems.*.category")
-    .notEmpty()
+    .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Each menu item must have a non-empty category."),
 ];
 

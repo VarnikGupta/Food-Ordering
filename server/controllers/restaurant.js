@@ -93,7 +93,7 @@ const getMenu = async (req, res) => {
       .promise();
     console.log("rest profile results", restaurantResult);
     if (!restaurantResult.Item) {
-      res.status(404).json({ message: "Restaurant not found" });
+      return res.status(404).json({ message: "Restaurant not found" });
     }
 
     const params = {
@@ -142,7 +142,7 @@ const updateMenu = async (req, res) => {
     const result = await documentClient.get(getRestaurantParams).promise();
     console.log(result.Item);
     if (!result.Item) {
-      res.status(404).json({ message: "Restaurant not found" });
+      return res.status(404).json({ message: "Restaurant not found" });
     }
     const params = {
       TableName: "FoodOrdering",

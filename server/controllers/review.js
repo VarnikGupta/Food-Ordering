@@ -20,7 +20,6 @@ const createReview = async (req, res) => {
   const createdAt = Math.floor(Date.now() / 1000);
 
   try {
-    // Fetch the restaurant details
     const getRestParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -33,7 +32,6 @@ const createReview = async (req, res) => {
       return res.status(404).json({ message: "Restaurant not found" });
     }
 
-    // Fetch the user details
     const getUserParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -46,7 +44,6 @@ const createReview = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Insert the new review
     const params = {
       TableName: "FoodOrdering",
       Item: {
@@ -65,7 +62,6 @@ const createReview = async (req, res) => {
     };
     await documentClient.put(params).promise();
 
-    // Calculate new rating and update restaurant details
     const currentRating = restResult.Item.rating || 0;
     const currentRatingCount = restResult.Item.ratingCount || 0;
 
@@ -112,7 +108,6 @@ const createReview = async (req, res) => {
 
 const getReviews = async (req, res) => {
   const { userId, restId } = req.query;
-  console.log(userId, restId);
   let queryParams;
   if (userId) {
     queryParams = {
@@ -145,7 +140,7 @@ const getReviews = async (req, res) => {
       };
       const restResult = await documentClient.get(getRestParams).promise();
       if (!restResult.Item) {
-        res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: "Restaurant not found" });
       }
     }
 
@@ -160,7 +155,7 @@ const getReviews = async (req, res) => {
 
       const userResult = await documentClient.get(getUserParams).promise();
       if (!userResult.Item) {
-        res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User not found" });
       }
     }
     const result = await documentClient.query(queryParams).promise();

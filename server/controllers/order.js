@@ -90,7 +90,7 @@ const getOrderDetails = async (req, res) => {
     const result = await documentClient.get(params).promise();
 
     if (!result.Item) {
-      res.status(400).json({ message: "Order not found" });
+      return res.status(400).json({ message: "Order not found" });
     }
     return res.json({
       message: "Order fetched successfully",
@@ -121,7 +121,7 @@ const createOrder = async (req, res) => {
   };
   const userResult = await documentClient.get(userQueryParams).promise();
   if (!userResult.Item) {
-    res.status(400).json({ message: "User not found" });
+    return res.status(400).json({ message: "User not found" });
   }
 
   const restaurantQueryParams = {
@@ -135,7 +135,7 @@ const createOrder = async (req, res) => {
     .get(restaurantQueryParams)
     .promise();
   if (!restaurantResult.Item) {
-    res.status(400).json({ message: "Restaurant not found" });
+    return res.status(400).json({ message: "Restaurant not found" });
   }
 
   try {
@@ -195,7 +195,7 @@ const updateOrderStatus = async (req, res) => {
   };
   const userResult = await documentClient.get(userQueryParams).promise();
   if (!userResult.Item) {
-    res.status(400).json({ message: "User not found" });
+    return res.status(400).json({ message: "User not found" });
   }
 
   const orderQueryParams = {
@@ -207,7 +207,7 @@ const updateOrderStatus = async (req, res) => {
   };
   const orderResult = await documentClient.get(orderQueryParams).promise();
   if (!orderResult.Item) {
-    res.status(400).json({ message: "Order not found" });
+    return res.status(400).json({ message: "Order not found" });
   }
 
   try {
@@ -227,7 +227,7 @@ const updateOrderStatus = async (req, res) => {
       ReturnValues: "ALL_NEW",
     };
 
-    const result = await documentClient.update(params).promise();
+    await documentClient.update(params).promise();
 
     return res.status(200).json({
       orderId: orderId,
