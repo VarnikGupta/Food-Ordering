@@ -1,23 +1,33 @@
-import logo from './logo.svg';
 import './App.css';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home/Home';
+import Restaurant from './pages/Restaurant/Restaurant';
+import NotFound from './pages/NotFound/NotFound';
+import Cart from './pages/Cart/Cart';
+import axios from 'axios';
+import { SERVER_URL } from './utils/config/config';
 
 function App() {
+  const [filterType, setFilterType] = useState("");
+
+  //call an api for activate the free backend server
+  // useEffect(() => {
+  //   const activateBackendServer = async () => {
+  //     await axios.get(SERVER_URL + "/api/auth/users");
+  //   }
+  //   activateBackendServer();
+  // }, [])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Routes>
+        <Route path={'/'} element={<Home filterType={filterType} setFilterType={setFilterType} />} />
+        <Route path={'/kolkata'} element={<Home filterType={filterType} setFilterType={setFilterType} />} />
+        <Route path={'/kolkata/:restaurant/order/:id'} element={<Restaurant />} />
+        <Route path={'/checkout'} element={<Cart />} />
+        <Route path={'*'} element={<NotFound />} />
+      </Routes>
     </div>
   );
 }

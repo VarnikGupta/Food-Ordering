@@ -24,7 +24,7 @@ const Header = () => {
     const [searchValue, setSearchValue] = useState("");
     const [searchBarItems, setSearchBarItems] = useState([]);
 
-    const cartItems = useSelector((state) => state.cart_items.items);
+    // const cartItems = useSelector((state) => state.cart_items.items);
     const loginUser = useSelector((state) => state.login_user.user);
     const dispatch = useDispatch();
 
@@ -46,7 +46,7 @@ const Header = () => {
             return regexValue.test(restaurant.info.name) || regexValue.test(restaurant.info.cuisine.map((cuisineName) => cuisineName.name));
         });
 
-        if (value == "") setSearchBarItems([]);
+        if (value === "") setSearchBarItems([]);
         else setSearchBarItems(matchesRestaurants.slice(0, 10));
         // console.log(matchesRestaurants);
     }
@@ -74,17 +74,17 @@ const Header = () => {
 
                 {/* search bar */}
                 <div className='search-container'>
-                    <div className='location'>
+                    {/* <div className='location'>
                         <span id='location-icon'><HiLocationMarker /></span>
                         <input placeholder='Kolkata' readOnly />
                         <span id='down-arrow-icon'><AiFillCaretDown /></span>
-                    </div>
+                    </div> */}
 
-                    <div className='divider'></div>
+                    {/* <div className='divider'></div> */}
 
                     <div className='search'>
                         <span id='search-icon'><CiSearch /></span>
-                        <input onChange={searchbarHandler} value={searchValue} placeholder='Search for restaurant, cuisine or a dish' />
+                        <input onChange={searchbarHandler} value={searchValue} placeholder='Search for restaurant or a dish' />
                         {searchValue && <div className='search-bar-items-container'>
                             {
                                 searchBarItems.length > 0 ?
@@ -109,8 +109,14 @@ const Header = () => {
                 <div className='authentications'>
                     <Link className='link' to='/checkout'>
                         <span className='cartIcon-total'>
-                            <HiShoppingCart style={{ color: Object.keys(cartItems).length && "green" }} />
-                            <span className='cartItemTotal' style={{ color: Object.keys(cartItems).length && "white" }}>{Object.keys(cartItems).length}</span>
+                            <HiShoppingCart
+                                // style={{ color: Object.keys(cartItems).length && "green" }}
+                            />
+                            <span className='cartItemTotal'
+                            // style={{ color: Object.keys(cartItems).length && "white" }}
+                            >
+                                {/* {Object.keys(cartItems).length} */}
+                            </span>
                         </span>Cart
                     </Link>
                     {!loginUser ?
@@ -130,7 +136,7 @@ const Header = () => {
             </div>
 
             {/* bar */}
-            <div style={{ opacity: !displayBarOptions && 0, zIndex: !displayBarOptions && -1 }} className='bar-options'>
+            {/* <div style={{ opacity: !displayBarOptions && 0, zIndex: !displayBarOptions && -1 }} className='bar-options'>
                 <Link className='link' to='/checkout' onClick={() => setDisplayBarOptions(false)}>
                     <span className='cartIcon-total'>
                         <HiShoppingCart style={{ color: Object.keys(cartItems).length && "green" }} />
@@ -182,7 +188,7 @@ const Header = () => {
                         </div>}
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {signUp && createPortal(<SignUp setSignUp={setSignUp} setLogIn={setLogIn} />, document.getElementById("portal"))}
             {logIn && createPortal(<LogIn setLogIn={setLogIn} setSignUp={setSignUp} />, document.getElementById("portal"))}

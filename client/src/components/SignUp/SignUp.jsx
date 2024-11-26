@@ -97,6 +97,7 @@ const SignUp = ({ setSignUp, setLogIn }) => {
             setSignupSuccess(true);
         }
         catch (err) {
+            console.log("err",err)
             setDisableSignup(false);
             if (err.response?.data.message === "Email already exists") {
                 setEmailExists(true);
