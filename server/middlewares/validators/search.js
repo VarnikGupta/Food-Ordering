@@ -3,12 +3,8 @@ const { query, oneOf } = require("express-validator");
 const searchValidator = [
   oneOf(
     [
-      query("restName")
-        .isString()
-        .withMessage("Restaurant name must be a string."),
-      query("dishName")
-        .isString()
-        .withMessage("Dish name must be a string."),
+      query("restName").exists({ checkFalsy: true, checkNull: true }),
+      query("dishName").exists({ checkFalsy: true, checkNull: true }),
     ],
     {
       message:

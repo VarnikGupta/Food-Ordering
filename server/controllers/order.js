@@ -12,31 +12,60 @@ const validateBody = validationResult.withDefaults({
 });
 
 const getOrderHistory = async (req, res) => {
-  const { userId } = req.params;
-  console.log(userId);
+  const { userId, restId, status } = req.query;
   try {
-    const getUserParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${userId}`,
-        SK: "Profile",
-      },
-    };
+    let queryParams = {};
+    if (userId) {
+      const getUserParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `User#${userId}`,
+          SK: "Profile",
+        },
+      };
 
-    const userResult = await documentClient.get(getUserParams).promise();
-    if (!userResult.Item) {
-      res.status(404).json({ message: "User not found" });
+      const userResult = await documentClient.get(getUserParams).promise();
+      if (!userResult.Item) {
+        res.status(404).json({ message: "User not found" });
+      }
+      queryParams = {
+        TableName: "FoodOrdering",
+        IndexName: "LSI1",
+        KeyConditionExpression: "PK = :pk AND begins_with(LSI1_SK, :sk)",
+        ExpressionAttributeValues: {
+          ":pk": `User#${userId}`,
+          ":sk": "Order#",
+        },
+      };
+    } else if (restId) {
+      const getRestaurantParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `Rest#${restId}`,
+          SK: "RestDetails",
+        },
+      };
+      const result = await documentClient.get(getRestaurantParams).promise();
+      if (!result.Item) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      queryParams = {
+        TableName: "FoodOrdering",
+        IndexName: "GSI1",
+        KeyConditionExpression: "GSI1_PK = :pk AND begins_with(GSI1_SK, :sk)",
+        ExpressionAttributeValues: {
+          ":pk": `Rest#${restId}`,
+          ":sk": "Order#",
+        },
+      };
     }
-    const getOrderHistoryParams = {
-      TableName: "FoodOrdering",
-      IndexName: "LSI1",
-      KeyConditionExpression: "PK = :pk AND begins_with(LSI1_SK,:sk)",
-      ExpressionAttributeValues: {
-        ":pk": `User#${userId}`,
-        ":sk": "Order#",
-      },
-    };
-    const result = await documentClient.query(getOrderHistoryParams).promise();
+    if (status) {
+      queryParams.FilterExpression = "#status = :status";
+      queryParams.ExpressionAttributeValues[":status"] = status;
+      queryParams.ExpressionAttributeNames = { "#status": "status" };
+    }
+
+    const result = await documentClient.query(queryParams).promise();
     const orderHistory = result.Items.map((order) => ({
       orderId: order.orderId,
       userId: order.userId,
@@ -46,7 +75,7 @@ const getOrderHistory = async (req, res) => {
       restId: order.restId,
       deliveryAddress: order.deliveryAddress,
       isFavourite: order.isFavourite,
-      totalAmount: order.totalAmount,
+      totalAmount: order.amount,
       items: order.items.map((item) => ({
         dishName: item.dishName,
         quantity: item.quantity,
@@ -92,9 +121,26 @@ const getOrderDetails = async (req, res) => {
     if (!result.Item) {
       return res.status(400).json({ message: "Order not found" });
     }
+    const orderDetails = {
+      orderId: result.Item.orderId,
+      userId: result.Item.userId,
+      orderDate: result.Item.orderDate,
+      status: result.Item.status,
+      restName: result.Item.restName,
+      restId: result.Item.restId,
+      deliveryAddress: result.Item.deliveryAddress,
+      isFavourite: result.Item.isFavourite,
+      totalAmount: result.Item.amount,
+      items: result.Item.items.map((item) => ({
+        dishName: item.dishName,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    };
+
     return res.json({
       message: "Order fetched successfully",
-      order: result.Item,
+      order: orderDetails,
     });
   } catch (err) {
     console.error("Error fetching order details:", err);
@@ -160,7 +206,7 @@ const createOrder = async (req, res) => {
       },
     };
 
-    await documentClient.put(params).promise();
+    const result = await documentClient.put(params).promise();
     return res.status(201).json({
       success: true,
       message: "Order created successfully",
@@ -175,12 +221,11 @@ const createOrder = async (req, res) => {
   }
 };
 
-const updateOrderStatus = async (req, res) => {
+const updateOrderDetails = async (req, res) => {
   const { userId, orderId } = req.params;
-  const { status } = req.body;
+  const { status, favourite } = req.body;
 
   const errors = validateBody(req);
-  console.log(errors, userId, orderId, status);
   if (!errors.isEmpty()) {
     const { err, message } = errors.array({ onlyFirstError: true })[0];
     return res.status(422).json({ err, message });
@@ -211,27 +256,38 @@ const updateOrderStatus = async (req, res) => {
   }
 
   try {
+    let updateExpression = [];
+    let expressionAttributeNames = {};
+    let expressionAttributeValues = {};
+
+    if (status) {
+      updateExpression.push("#status = :status");
+      expressionAttributeNames["#status"] = "status";
+      expressionAttributeValues[":status"] = status;
+    }
+
+    if (favourite === true) {
+      updateExpression.push("#isFavourite = :isFavourite");
+      expressionAttributeNames["#isFavourite"] = "isFavourite";
+      expressionAttributeValues[":isFavourite"] = true;
+    }
     const params = {
       TableName: "FoodOrdering",
       Key: {
         PK: `User#${userId}`,
         SK: `Order#${orderId}`,
       },
-      UpdateExpression: "set #status = :status",
-      ExpressionAttributeNames: {
-        "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":status": status,
-      },
-      ReturnValues: "ALL_NEW",
+      UpdateExpression: `SET ${updateExpression.join(", ")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "UPDATED_NEW",
     };
 
-    await documentClient.update(params).promise();
+    const updatedResult = await documentClient.update(params).promise();
 
     return res.status(200).json({
-      orderId: orderId,
-      status: status,
+      orderId,
+      updatedDetails: updatedResult.Attributes,
       message: "Order status updated successfully",
     });
   } catch (err) {
@@ -247,5 +303,5 @@ module.exports = {
   createOrder,
   getOrderHistory,
   getOrderDetails,
-  updateOrderStatus,
+  updateOrderDetails,
 };

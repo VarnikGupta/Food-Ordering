@@ -79,7 +79,6 @@ const getRestaurantById = async (req, res) => {
 
 const getMenu = async (req, res) => {
   const restId = req.params.id;
-  console.log(restId);
   try {
     const restaurantQueryParams = {
       TableName: "FoodOrdering",
@@ -107,7 +106,14 @@ const getMenu = async (req, res) => {
 
     const existingMenuResult = await documentClient.query(params).promise();
     console.log(existingMenuResult);
-    const menu = existingMenuResult.Items;
+    const menu = existingMenuResult.Items.map((item) => (
+      {
+        dishName: item.dishName,
+        cuisine: item.cuisine,
+        cost: item.cost,
+        category: item.category
+      }
+    ));
 
     return res.status(200).json({
       success: true,
@@ -140,7 +146,6 @@ const updateMenu = async (req, res) => {
       },
     };
     const result = await documentClient.get(getRestaurantParams).promise();
-    console.log(result.Item);
     if (!result.Item) {
       return res.status(404).json({ message: "Restaurant not found" });
     }

@@ -6,7 +6,6 @@ const orderRoutes = require("./routes/order");
 const reviewRoutes = require("./routes/review");
 const searchRoutes = require("./routes/search");
 const { create } = require("./database/tables");
-const { checkEmailExistence } = require("./controllers/user");
 const { deleteTable } = require("./database/db");
 
 const app = express();
@@ -16,7 +15,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // create();
-// checkEmailExistence("abc@gmail.com")
 // deleteTable("FoodOrdering")
 
 app.use("/api/users", userRoutes);

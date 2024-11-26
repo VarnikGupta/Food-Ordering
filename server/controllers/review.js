@@ -107,6 +107,11 @@ const createReview = async (req, res) => {
 };
 
 const getReviews = async (req, res) => {
+  const errors = validateBody(req);
+  if (!errors.isEmpty()) {
+    const { err, message } = errors.array({ onlyFirstError: true })[0];
+    return res.status(422).json({ err, message });
+  }
   const { userId, restId } = req.query;
   let queryParams;
   if (userId) {
@@ -159,7 +164,16 @@ const getReviews = async (req, res) => {
       }
     }
     const result = await documentClient.query(queryParams).promise();
-    const reviews = result.Items || [];
+    const reviews = result.Items.map((review)=>({
+      restId: review.restId,
+      userDeleted: review.userDeleted,
+      userName: review.userName,
+      rating: review.rating,
+      userId: review.userId,
+      feedback: review.feedback,
+      createdAt: review.createdAt,
+      restName: review.restName
+    })) || [];
     return res
       .status(200)
       .json({ reviews, message: "Reviews fetched successfully" });

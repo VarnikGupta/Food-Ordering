@@ -42,7 +42,7 @@ const registerUser = async (req, res) => {
         phone: phone,
         address: [address],
         password: hashedPassword,
-        isAdmin: isAdmin,
+        isAdmin: isAdmin || false,
       },
     };
     const cartParams = {
@@ -60,7 +60,6 @@ const registerUser = async (req, res) => {
       success: true,
       message: "User registered successfully",
       userId,
-      // result
     });
   } catch (err) {
     console.error("Error registering new user: ", err);
@@ -106,7 +105,10 @@ const login = async (req, res) => {
       if (isMatch) {
         let jwtSecretKey = process.env.JWT_SECRET_KEY;
         console.log(jwtSecretKey);
-        let payload = { userId: user[0].userId };
+        let payload = {
+          userId: user[0].userId,
+          isAdmin: user[0].isAdmin || false,
+        };
 
         const token = jwt.sign(payload, jwtSecretKey, {
           expiresIn: "1h",
@@ -139,24 +141,8 @@ const updateUserDetails = async (req, res) => {
 
   try {
     const userId = req.params.id;
-    console.log(userId);
 
     const { name, password, phone, address } = req.body;
-
-    const getUserParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${userId}`,
-        SK: "Profile",
-      },
-    };
-
-    const userResult = await documentClient.get(getUserParams).promise();
-    console.log(userResult);
-
-    if (!userResult.Item) {
-      return res.status(404).json({ message: "User not found" });
-    }
 
     const updateExpression = [];
     const expressionValues = {};
@@ -184,10 +170,6 @@ const updateUserDetails = async (req, res) => {
       expressionValues[":address"] = address;
     }
 
-    if (updateExpression.length === 0) {
-      return res.status(400).json({ message: "No fields provided for update" });
-    }
-
     const updateParams = {
       TableName: "FoodOrdering",
       Key: {
@@ -197,37 +179,60 @@ const updateUserDetails = async (req, res) => {
       UpdateExpression: `SET ${updateExpression.join(", ")}`,
       ExpressionAttributeValues: expressionValues,
       ExpressionAttributeNames: expressionNames,
+      ConditionExpression: "attribute_exists(PK)",
       ReturnValues: "UPDATED_NEW",
     };
 
     const updateResult = await documentClient.update(updateParams).promise();
 
-    console.log("Update Result:", updateResult);
+    if (name) {
+      const queryParams = {
+        TableName: "FoodOrdering",
+        KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues: {
+          ":pk": `User#${userId}`,
+          ":sk": "Review#",
+        },
+      };
+
+      const reviews = await documentClient.query(queryParams).promise();
+
+      const updateReviewPromises = reviews.Items.map((review) => {
+        const updateReviewParams = {
+          TableName: "FoodOrdering",
+          Key: {
+            PK: `User#${userId}`,
+            SK: review.SK,
+          },
+          UpdateExpression: "SET userName = :userName",
+          ExpressionAttributeValues: {
+            ":userName": name,
+          },
+        };
+        return documentClient.update(updateReviewParams).promise();
+      });
+
+      await Promise.all(updateReviewPromises);
+    }
+
+    const result = updateResult.Attributes;
 
     return res
       .status(200)
-      .json({ message: "User profile updated successfully" });
+      .json({ message: "User profile updated successfully", result });
   } catch (error) {
+    if (error.code === "ConditionalCheckFailedException") {
+      return res.status(404).json({ message: "User profile not found." });
+    }
     console.error("Error updating user profile:", error);
     return res.status(500).json({ err: true, message: "Something went wrong" });
   }
 };
 
 const deleteUser = async (req, res) => {
-  const { userId } = req.params.id;
-  try {
-    const userProfileParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${userId}`,
-        SK: "Profile",
-      },
-    };
+  const userId = req.params.id;
 
-    const userProfile = await dynamoDB.get(userProfileParams).promise();
-    if (!userProfile.Item) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  try {
 
     const activeOrdersParams = {
       TableName: "FoodOrdering",
@@ -235,18 +240,16 @@ const deleteUser = async (req, res) => {
       ExpressionAttributeValues: {
         ":pk": `User#${userId}`,
         ":skPrefix": "Order#",
+        ":completed": "Completed",
+        ":cancelled": "Cancelled",
       },
       FilterExpression: "NOT (#status IN (:completed, :cancelled))",
       ExpressionAttributeNames: {
         "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":completed": "Completed",
-        ":cancelled": "Cancelled",
-      },
+      }
     };
 
-    const activeOrders = await dynamoDB.query(activeOrdersParams).promise();
+    const activeOrders = await documentClient.query(activeOrdersParams).promise();
     if (activeOrders.Items.length > 0) {
       return res.status(400).json({
         message: "Active orders prevent user deletion",
@@ -268,11 +271,11 @@ const deleteUser = async (req, res) => {
           ":deleted": true,
         },
       };
-      return dynamoDB.update(updateOrderParams).promise();
+      return documentClient.update(updateOrderParams).promise();
     });
 
     const reviewQueryParams = {
-      TableName: "YourTableName",
+      TableName: "FoodOrdering",
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :skPrefix)",
       ExpressionAttributeValues: {
         ":pk": `User#${userId}`,
@@ -280,7 +283,8 @@ const deleteUser = async (req, res) => {
       },
     };
 
-    const reviews = await dynamoDB.query(reviewQueryParams).promise();
+    const reviews = await documentClient.query(reviewQueryParams).promise();
+
     const reviewUpdatePromises = reviews.Items.map((review) => {
       const updateReviewParams = {
         TableName: "FoodOrdering",
@@ -296,30 +300,30 @@ const deleteUser = async (req, res) => {
           ":deleted": true,
         },
       };
-      return dynamoDB.update(updateReviewParams).promise();
+      return documentClient.update(updateReviewParams).promise();
     });
 
-    // Delete user's cart
     const deleteCartParams = {
       TableName: "FoodOrdering",
       Key: {
         PK: `User#${userId}`,
         SK: "Cart",
       },
+      ConditionExpression: "attribute_exists(PK)",
     };
 
-    const deleteCartPromise = dynamoDB.delete(deleteCartParams).promise();
+    const deleteCartPromise = documentClient.delete(deleteCartParams).promise();
 
-    // Delete user's profile
     const deleteProfileParams = {
       TableName: "FoodOrdering",
       Key: {
         PK: `User#${userId}`,
         SK: "Profile",
       },
+      ConditionExpression: "attribute_exists(PK)",
     };
 
-    const deleteProfilePromise = dynamoDB.delete(deleteProfileParams).promise();
+    const deleteProfilePromise = documentClient.delete(deleteProfileParams).promise();
 
     await Promise.all([
       ...orderUpdatePromises,
@@ -330,6 +334,9 @@ const deleteUser = async (req, res) => {
 
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
+    if (error.code === "ConditionalCheckFailedException") {
+      return res.status(404).json({ message: "User not found." });
+    }
     console.error("Error deleting user:", error);
     return res.status(500).json({
       message: "Internal server error",
@@ -365,6 +372,19 @@ const getUserById = async (req, res) => {
 const getUserCart = async (req, res) => {
   const id = req.params.id;
   try {
+    const getUserParams = {
+      TableName: "FoodOrdering",
+      Key: {
+        PK: `User#${userId}`,
+        SK: "Profile",
+      },
+    };
+
+    const userResult = await documentClient.get(getUserParams).promise();
+
+    if (!userResult.Item) {
+      return res.status(404).json({ message: "User not found" });
+    }
     const params = {
       TableName: "FoodOrdering",
       KeyConditionExpression: "PK = :pk AND SK = :sk",
@@ -374,25 +394,16 @@ const getUserCart = async (req, res) => {
       },
     };
     const result = await documentClient.query(params).promise();
-    console.log("item bahar", result.Items);
-    const cartItems = result.Items[0].items.map((item) =>
-      // console.log("item andr",item)
-      ({
-        dishName: item.dishName,
-        quantity: item.quantity,
-        price: item.price,
-        restId: item.restId,
-        restName: item.restName,
-      })
-    );
-    const totalAmount = cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    const cartItems = result.Items[0].items.map((item) => ({
+      dishName: item.dishName,
+      quantity: item.quantity,
+      price: item.price,
+      restId: item.restId,
+      restName: item.restName,
+    }));
     return res.status(200).json({
       id,
       cartItems,
-      totalAmount,
     });
   } catch (err) {
     console.error("Error fetching user cart:", err);
@@ -408,23 +419,21 @@ const updateUserCart = async (req, res) => {
   }
   const userId = req.params.id;
   const { action, item } = req.body;
-  console.log(userId, item);
 
   try {
-    // const getUserParams = {
-    //   TableName: "FoodOrdering",
-    //   Key: {
-    //     PK: `User#${userId}`,
-    //     SK: "Profile",
-    //   },
-    // };
+    const getUserParams = {
+      TableName: "FoodOrdering",
+      Key: {
+        PK: `User#${userId}`,
+        SK: "Profile",
+      },
+    };
 
-    // const userResult = await documentClient.get(getUserParams).promise();
-    // console.log(userResult);
+    const userResult = await documentClient.get(getUserParams).promise();
 
-    // if (!userResult.Item) {
-    //   return res.status(404).json({ message: "User not found" });
-    // }
+    if (!userResult.Item) {
+      return res.status(404).json({ message: "User not found" });
+    }
     const params = {
       TableName: "FoodOrdering",
       Key: {
@@ -434,53 +443,66 @@ const updateUserCart = async (req, res) => {
     };
 
     const existingCart = await documentClient.get(params).promise();
-    console.log("existing cart", existingCart.Item);
     let cartItems = existingCart.Item?.items || [];
+    let currentRestId = existingCart.Item?.restId || null;
+    if (action === "remove" && cartItems.length === 0) {
+      return res.status(400).json({
+        message: "Cannot remove items from an empty cart",
+      });
+    }
+    if (cartItems.length === 0) {
+      cartItems.push(item);
+      currentRestId = item.restId;
+    } else {
+      if (currentRestId === item.restId) {
+        if (action === "add") {
+          const existingItem = cartItems.find(
+            (cartItem) => cartItem.dishName === item.dishName
+          );
 
-    if (action === "add") {
-      const existingItem = cartItems.find(
-        (cartItem) => cartItem.dishName === item.dishName
-      );
-      console.log("existing", existingItem);
-
-      if (existingItem) {
-        cartItems = cartItems.map((cartItem) =>
-          cartItem.name === item.name
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
-            : cartItem
-        );
-      } else {
-        cartItems.push(item);
-      }
-    } else if (action === "remove") {
-      cartItems = cartItems
-        .map((cartItem) => {
-          if (cartItem.name === item.name) {
-            const updatedQuantity = cartItem.quantity - item.quantity;
-            if (updatedQuantity > 0) {
-              return { ...cartItem, quantity: updatedQuantity };
-            }
-            return null;
+          if (existingItem) {
+            cartItems = cartItems.map((cartItem) =>
+              cartItem.dishName === item.dishName
+                ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+                : cartItem
+            );
+          } else {
+            cartItems.push(item);
           }
-          return cartItem;
-        })
-        .filter(Boolean);
+        } else if (action === "remove") {
+          cartItems = cartItems
+            .map((cartItem) => {
+              if (cartItem.dishName === item.dishName) {
+                const updatedQuantity = cartItem.quantity - item.quantity;
+                if (updatedQuantity > 0) {
+                  return { ...cartItem, quantity: updatedQuantity };
+                }
+                return null;
+              }
+              return cartItem;
+            })
+            .filter(Boolean);
+        }
+      } else {
+        cartItems = [item];
+        currentRestId = item.restId;
+      }
     }
 
     const updateParams = {
       ...params,
-      UpdateExpression: "SET #items = :items",
+      UpdateExpression: "SET #items = :items, restId = :restId",
       ExpressionAttributeNames: {
         "#items": "items",
       },
       ExpressionAttributeValues: {
         ":items": cartItems,
+        ":restId": currentRestId,
       },
       ReturnValues: "ALL_NEW",
     };
 
     const updateResult = await documentClient.update(updateParams).promise();
-    console.log(updateResult.Attributes.items);
 
     return res.status(200).json({
       success: true,
