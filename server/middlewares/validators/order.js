@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, oneOf, query } = require("express-validator");
 
 const orderValidator = [
   body("userId")
@@ -18,28 +18,54 @@ const orderValidator = [
   body("items")
     .isArray({ min: 1 })
     .withMessage("At least one item is required in the order"),
-  body("items.dishName")
+  body("items.*.dishName")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Item must have a non-empty dishName."),
-  body("items.quantity")
+  body("items.*.quantity")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Item must have a non-empty quantity."),
-  body("items.cost")
+  body("items.*.price")
     .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Item must have a valid cost greater than 0."),
+    .withMessage("Item must have a valid price greater than 0."),
   body("deliveryAddress")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Delivery address is required"),
 ];
 
-const orderStatusValidator = [
-  body("status")
-    .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Status is required")
-    .isIn(["Preparing", "Completed", "Cancelled"])
-    .withMessage(
-      "Status must be one of: 'Preparing', 'Completed', or 'Cancelled'"
-    ),
+const updateOrderValidator = [
+  oneOf(
+    [
+      body("status")
+        .exists({ checkFalsy: true, checkNull: true })
+        .withMessage("Status is required")
+        .isIn(["Preparing", "Completed", "Cancelled"])
+        .withMessage(
+          "Status must be one of: 'Preparing', 'Completed', or 'Cancelled'"
+        ),
+      body("favourite")
+        .exists({ checkFalsy: true, checkNull: true })
+        .withMessage("favourite is required"),
+    ],
+    {
+      message: "At least one field from status or favourite must be provided",
+    }
+  ),
 ];
 
-module.exports = { orderValidator, orderStatusValidator };
+const orderHistoryValidator = [
+  oneOf(
+    [
+      query("userId")
+        .exists({ checkFalsy: true, checkNull: true })
+        .withMessage("userId is required"),
+      query("restId")
+        .exists({ checkFalsy: true, checkNull: true })
+        .withMessage("restId is required"),
+    ],
+    {
+      message: "At least one field from userId or restId must be provided",
+    }
+  ),
+];
+
+module.exports = { orderValidator, updateOrderValidator, orderHistoryValidator };

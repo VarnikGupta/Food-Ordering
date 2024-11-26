@@ -164,7 +164,16 @@ const getReviews = async (req, res) => {
       }
     }
     const result = await documentClient.query(queryParams).promise();
-    const reviews = result.Items || [];
+    const reviews = result.Items.map((review)=>({
+      restId: review.restId,
+      userDeleted: review.userDeleted,
+      userName: review.userName,
+      rating: review.rating,
+      userId: review.userId,
+      feedback: review.feedback,
+      createdAt: review.createdAt,
+      restName: review.restName
+    })) || [];
     return res
       .status(200)
       .json({ reviews, message: "Reviews fetched successfully" });

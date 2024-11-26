@@ -185,32 +185,54 @@ const updateUserDetails = async (req, res) => {
 
     const updateResult = await documentClient.update(updateParams).promise();
 
+    if (name) {
+      const queryParams = {
+        TableName: "FoodOrdering",
+        KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues: {
+          ":pk": `User#${userId}`,
+          ":sk": "Review#",
+        },
+      };
+
+      const reviews = await documentClient.query(queryParams).promise();
+
+      const updateReviewPromises = reviews.Items.map((review) => {
+        const updateReviewParams = {
+          TableName: "FoodOrdering",
+          Key: {
+            PK: `User#${userId}`,
+            SK: review.SK,
+          },
+          UpdateExpression: "SET userName = :userName",
+          ExpressionAttributeValues: {
+            ":userName": name,
+          },
+        };
+        return documentClient.update(updateReviewParams).promise();
+      });
+
+      await Promise.all(updateReviewPromises);
+    }
+
     const result = updateResult.Attributes;
 
     return res
       .status(200)
       .json({ message: "User profile updated successfully", result });
   } catch (error) {
+    if (error.code === "ConditionalCheckFailedException") {
+      return res.status(404).json({ message: "User profile not found." });
+    }
     console.error("Error updating user profile:", error);
     return res.status(500).json({ err: true, message: "Something went wrong" });
   }
 };
 
 const deleteUser = async (req, res) => {
-  const { userId } = req.params.id;
-  try {
-    const userProfileParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${userId}`,
-        SK: "Profile",
-      },
-    };
+  const userId = req.params.id;
 
-    const userProfile = await dynamoDB.get(userProfileParams).promise();
-    if (!userProfile.Item) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  try {
 
     const activeOrdersParams = {
       TableName: "FoodOrdering",
@@ -218,18 +240,16 @@ const deleteUser = async (req, res) => {
       ExpressionAttributeValues: {
         ":pk": `User#${userId}`,
         ":skPrefix": "Order#",
+        ":completed": "Completed",
+        ":cancelled": "Cancelled",
       },
       FilterExpression: "NOT (#status IN (:completed, :cancelled))",
       ExpressionAttributeNames: {
         "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":completed": "Completed",
-        ":cancelled": "Cancelled",
-      },
+      }
     };
 
-    const activeOrders = await dynamoDB.query(activeOrdersParams).promise();
+    const activeOrders = await documentClient.query(activeOrdersParams).promise();
     if (activeOrders.Items.length > 0) {
       return res.status(400).json({
         message: "Active orders prevent user deletion",
@@ -251,11 +271,11 @@ const deleteUser = async (req, res) => {
           ":deleted": true,
         },
       };
-      return dynamoDB.update(updateOrderParams).promise();
+      return documentClient.update(updateOrderParams).promise();
     });
 
     const reviewQueryParams = {
-      TableName: "YourTableName",
+      TableName: "FoodOrdering",
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :skPrefix)",
       ExpressionAttributeValues: {
         ":pk": `User#${userId}`,
@@ -263,7 +283,8 @@ const deleteUser = async (req, res) => {
       },
     };
 
-    const reviews = await dynamoDB.query(reviewQueryParams).promise();
+    const reviews = await documentClient.query(reviewQueryParams).promise();
+
     const reviewUpdatePromises = reviews.Items.map((review) => {
       const updateReviewParams = {
         TableName: "FoodOrdering",
@@ -279,30 +300,30 @@ const deleteUser = async (req, res) => {
           ":deleted": true,
         },
       };
-      return dynamoDB.update(updateReviewParams).promise();
+      return documentClient.update(updateReviewParams).promise();
     });
 
-    // Delete user's cart
     const deleteCartParams = {
       TableName: "FoodOrdering",
       Key: {
         PK: `User#${userId}`,
         SK: "Cart",
       },
+      ConditionExpression: "attribute_exists(PK)",
     };
 
-    const deleteCartPromise = dynamoDB.delete(deleteCartParams).promise();
+    const deleteCartPromise = documentClient.delete(deleteCartParams).promise();
 
-    // Delete user's profile
     const deleteProfileParams = {
       TableName: "FoodOrdering",
       Key: {
         PK: `User#${userId}`,
         SK: "Profile",
       },
+      ConditionExpression: "attribute_exists(PK)",
     };
 
-    const deleteProfilePromise = dynamoDB.delete(deleteProfileParams).promise();
+    const deleteProfilePromise = documentClient.delete(deleteProfileParams).promise();
 
     await Promise.all([
       ...orderUpdatePromises,
@@ -313,6 +334,9 @@ const deleteUser = async (req, res) => {
 
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
+    if (error.code === "ConditionalCheckFailedException") {
+      return res.status(404).json({ message: "User not found." });
+    }
     console.error("Error deleting user:", error);
     return res.status(500).json({
       message: "Internal server error",
