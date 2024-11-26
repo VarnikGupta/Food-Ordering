@@ -26,7 +26,6 @@ const search = async (req, res) => {
     minCost,
     maxCost,
   } = req.query;
-  console.log(req.query);
   try {
     let params;
 
@@ -52,7 +51,8 @@ const search = async (req, res) => {
         if (address.addressLine) {
           params.FilterExpression +=
             " AND contains(#location.#addressLine, :addressLine)";
-          params.ExpressionAttributeValues[":addressLine"] = address.addressLine;
+          params.ExpressionAttributeValues[":addressLine"] =
+            address.addressLine;
           params.ExpressionAttributeNames["#location"] = "location";
           params.ExpressionAttributeNames["#addressLine"] = "addressLine";
         }
@@ -112,12 +112,29 @@ const search = async (req, res) => {
         params.ExpressionAttributeNames["#cost"] = "cost";
       }
     }
-    console.log(params);
     const result = await documentClient.query(params).promise();
+    let searchItems=[];
+    if (restName) {
+      searchItems = result.Items.map((item) => ({
+        restName: item.name,
+        rating: item.rating,
+        location: item.location,
+        ratingCount: item.ratingCount,
+        restId: item.restId,
+      }));
+    } else {
+      searchItems = result.Items.map((item) => ({
+        dishName: item.dishName,
+        category: item.category,
+        cuisine: item.cuisine,
+        cost: item.cost,
+        restName: item.restName,
+      }));
+    }
 
     return res.status(200).json({
       message: "Search results successful",
-      searchItems: result.Items,
+      searchItems,
     });
   } catch (err) {
     console.error("Error in search:", err);

@@ -107,6 +107,11 @@ const createReview = async (req, res) => {
 };
 
 const getReviews = async (req, res) => {
+  const errors = validateBody(req);
+  if (!errors.isEmpty()) {
+    const { err, message } = errors.array({ onlyFirstError: true })[0];
+    return res.status(422).json({ err, message });
+  }
   const { userId, restId } = req.query;
   let queryParams;
   if (userId) {

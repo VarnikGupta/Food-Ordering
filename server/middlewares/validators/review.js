@@ -1,10 +1,18 @@
-const { body } = require("express-validator");
+const { body, query, oneOf } = require("express-validator");
 
 const reviewValidator = [
-  body("restId").notEmpty().withMessage("Restaurant ID is required"),
-  body("userName").notEmpty().withMessage("User Name is required"),
-  body("restName").notEmpty().withMessage("Restaurant Name is required"),
-  body("userId").notEmpty().withMessage("User ID is required"),
+  body("restId")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Restaurant ID is required"),
+  body("userName")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("User Name is required"),
+  body("restName")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Restaurant Name is required"),
+  body("userId")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("User ID is required"),
   body("rating")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Rating is required")
@@ -17,4 +25,17 @@ const reviewValidator = [
     .withMessage("Feedback must not exceed 500 characters"),
 ];
 
-module.exports = { reviewValidator };
+const getReviewValidator = [
+  oneOf(
+    [
+      query("restId").exists({ checkFalsy: true, checkNull: true }),
+      query("userId").exists({ checkFalsy: true, checkNull: true }),
+    ],
+    {
+      message:
+        "At least one field from restId or userId must be provided to fetch reviews",
+    }
+  ),
+];
+
+module.exports = { reviewValidator, getReviewValidator };

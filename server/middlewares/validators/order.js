@@ -4,41 +4,29 @@ const orderValidator = [
   body("userId")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("userId is required"),
-
   body("amount")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Amount is required")
     .isFloat({ gt: 0 })
     .withMessage("Amount must be a positive number"),
-
   body("restId")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Restaurant ID (restId) is required"),
-
   body("restName")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Restaurant name (restName) is required"),
-
   body("items")
     .isArray({ min: 1 })
-    .withMessage("At least one item is required in the order")
-    .custom((value) => {
-      value.forEach((item) => {
-        if (!item.dishName || !item.quantity || !item.price) {
-          throw new Error(
-            "Each item must contain dishName, quantity, and price."
-          );
-        }
-        if (item.quantity <= 0) {
-          throw new Error("Quantity must be greater than 0.");
-        }
-        if (item.price <= 0) {
-          throw new Error("Price must be greater than 0.");
-        }
-      });
-      return true;
-    }),
-
+    .withMessage("At least one item is required in the order"),
+  body("items.dishName")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a non-empty dishName."),
+  body("items.quantity")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a non-empty quantity."),
+  body("items.cost")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a valid cost greater than 0."),
   body("deliveryAddress")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Delivery address is required"),

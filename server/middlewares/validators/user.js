@@ -35,7 +35,11 @@ const updateValidator = [
       body("password")
         .isLength({ min: 8 })
         .withMessage("Password must be at least 8 characters long"),
-      body("phone").isLength(10).withMessage("Enter a valid phone number"),
+      body("phone")
+        .exists({ checkFalsy: true, checkNull: true })
+        .withMessage("Phone number is required")
+        .isMobilePhone()
+        .withMessage("Enter a valid phone number"),
     ],
     {
       message:
@@ -50,31 +54,24 @@ const updateUserCartValidator = [
     .withMessage("Action is required")
     .isIn(["add", "remove"])
     .withMessage("Action must be 'add' or 'remove'"),
-    body("item")
+  body("item")
     .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Item object is required")
-    .custom((value) => {
-      if (typeof value !== "object" || Array.isArray(value)) {
-        throw new Error("Item must be an object.");
-      }
-      Object.keys(value).forEach((key) => {
-        const item = value[key];
-        if (!item.dishName || !item.quantity || !item.price) {
-          throw new Error(
-            `Item must contain dishName, quantity, and price.`
-          );
-        }
-        if (item.quantity <= 0) {
-          throw new Error(`Quantity for item "${key}" must be greater than 0.`);
-        }
-        if (item.price <= 0) {
-          throw new Error(`Price for item "${key}" must be greater than 0.`);
-        }
-      });
-      return true;
-    })
-  
-
+    .withMessage("Item object is required"),
+  body("item.dishName")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a non-empty dishName."),
+  body("item.quantity")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a non-empty quantity."),
+  body("item.price")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must have a valid cost greater than 0."),
+  body("item.restId")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must belong to a restaurant Id"),
+  body("item.restName")
+    .exists({ checkFalsy: true, checkNull: true })
+    .withMessage("Item must belong to a restaurant name"),
 ];
 
 module.exports = {

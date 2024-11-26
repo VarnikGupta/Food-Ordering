@@ -13,7 +13,7 @@ const validateBody = validationResult.withDefaults({
 
 const getOrderHistory = async (req, res) => {
   const { userId } = req.params;
-  console.log(userId);
+  const { status } = req.query; 
   try {
     const getUserParams = {
       TableName: "FoodOrdering",
@@ -36,6 +36,10 @@ const getOrderHistory = async (req, res) => {
         ":sk": "Order#",
       },
     };
+    if (status) {
+      getOrderHistoryParams.FilterExpression = "status = :status";
+      getOrderHistoryParams.ExpressionAttributeValues[":status"] = status;
+    }
     const result = await documentClient.query(getOrderHistoryParams).promise();
     const orderHistory = result.Items.map((order) => ({
       orderId: order.orderId,
