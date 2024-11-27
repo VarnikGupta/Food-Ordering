@@ -34,7 +34,7 @@ import { Link } from 'react-router-dom';
 import CartView from '../../components/CartView/CartView';
 
 const inspirationFoods = [
-    { imageUrl: biryani, title: "Biryani", page_url: "/kolkata/arsalan-park-street-area/order/20795" },
+    { imageUrl: biryani, title: "Biryani", page_url: "/search?search=Biryani" },
     { imageUrl: pizza, title: "Pizza", page_url: "/kolkata/dominos-pizza-1-bara-bazar/order/18733272" },
     { imageUrl: chicken, title: "Chicken", page_url: "/kolkata/kfc-new-market-area/order/207376" },
     { imageUrl: burger, title: "Burger", page_url: "/kolkata/wow-momo-2-sealdah-area/order/19231719" },
@@ -98,11 +98,11 @@ function Home({ filterType, setFilterType }) {
     return (
         <div className='home'>
 
-            <OrderType />
-            <FoodFilters filterType={filterType} setFilterType={setFilterType} />
+            {/* <OrderType /> */}
+            {/* <FoodFilters filterType={filterType} setFilterType={setFilterType} /> */}
 
             {/* Inspiration for your first order */}
-            {!filterType && <div className='inspiration-foods-container'>
+            {/* {!filterType && <div className='inspiration-foods-container'>
                 <div className='inspiration-foods-items'>
                     <h3>Inspiration for your first order</h3>
                     {itemsScrollLength < 0 && <section className='scroll-btn' id='prev-btn' onClick={itemsPrevScroolHandler}><MdOutlineArrowBackIos /></section>}
@@ -122,7 +122,7 @@ function Home({ filterType, setFilterType }) {
                     </section>
                     {itemsScrollLength > -1134 && <section className='scroll-btn' id='next-btn' onClick={itemNextScroolHandler}><MdOutlineArrowForwardIos /></section>}
                 </div>
-            </div>}
+            </div>} */}
 
             {/* Top brands for you */}
             {!filterType && <div className='brands-container'>
@@ -149,16 +149,16 @@ function Home({ filterType, setFilterType }) {
             </div>}
 
             {/* Restaurants */}
-            <Restaurants filterType={filterType} />
+            {/* <Restaurants filterType={filterType} /> */}
 
             {/* go to top button */}
-            <button className='goToTop-btn' style={{
+            {/* <button className='goToTop-btn' style={{
                 opacity: displayGoToTopBtn && 1,
                 visibility: displayGoToTopBtn && "visible"
-            }} onClick={() => window.scrollTo(0, 0)}><MdKeyboardArrowUp /></button>
+            }} onClick={() => window.scrollTo(0, 0)}><MdKeyboardArrowUp /></button> */}
 
             {/* cart view */}
-            <CartView />
+            {/* <CartView /> */}
         </div>
     )
 }

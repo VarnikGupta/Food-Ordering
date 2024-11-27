@@ -88,19 +88,18 @@ const LogIn = ({ setLogIn, setSignUp }) => {
         SERVER_URL + "/api/users/login",
         userData
       );
-      console.log(SERVER_URL, response);
       dispatch(login(response.data.user));
       // dispatch(cartInitialization(response.data.cart_items));
       setLoginSuccess(true);
     } catch (err) {
       console.log(err);
       setDisableLogin(false);
-      if (err.response?.data.message === "Email dose not exists") {
+      if (err.response?.data.message === "Email not registered") {
         setWrongEmail(true);
         return;
       }
 
-      if (err.response?.data.message === "Incorrect password") {
+      if (err.response?.data.message === "Wrong password") {
         setWrongPassword(true);
         return;
       }
@@ -299,10 +298,10 @@ const LogIn = ({ setLogIn, setSignUp }) => {
                     className="ok"
                     onClick={() => {
                       setLogIn(false);
-                      navigate("/kolkata");
+                      navigate("/");
                     }}
                   >
-                    See Restaurant Near You
+                    Explore
                   </button>
                 </div>
               </section>
@@ -319,7 +318,7 @@ const LogIn = ({ setLogIn, setSignUp }) => {
           </section>
 
           <p className="message">
-            res
+            Some Error Occurred!
           </p>
           <button className="try-again" onClick={() => setUnknownError(false)}>
             Try again

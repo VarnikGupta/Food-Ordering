@@ -92,7 +92,7 @@ const SignUp = ({ setSignUp, setLogIn }) => {
         }
 
         try {
-            const response = await axios.post(SERVER_URL + "/api/auth/register", userData);
+            const response = await axios.post(SERVER_URL + "/api/users/signup", userData);
             setUserData(response.data.user);
             setSignupSuccess(true);
         }
@@ -137,7 +137,7 @@ const SignUp = ({ setSignUp, setLogIn }) => {
     const loginHandler = () => {
         setSignUp(false);
         dispatch(login(userData));
-        dispatch(cartInitialization(localStorage.getItem("cart_items") ? JSON.parse(localStorage.getItem("cart_items")) : {}));
+        // dispatch(cartInitialization(localStorage.getItem("cart_items") ? JSON.parse(localStorage.getItem("cart_items")) : {}));
     }
 
     useEffect(() => {
@@ -220,10 +220,10 @@ const SignUp = ({ setSignUp, setLogIn }) => {
                                     <div className='moving-element'></div>
                                 </div>
                                 <h2 className='heading'>Success!</h2>
-                                <p className='text'>Account created successfully. Do you want to login?</p>
+                                {/* <p className='text'>Account created successfully. Do you want to login?</p> */}
                                 <div className='buttons'>
-                                    <button className='login' onClick={loginHandler}>Yes, Login</button>
-                                    <button className='cancel' onClick={() => setSignUp(false)}>Cancel</button>
+                                    {/* <button className='login' onClick={loginHandler}>Yes, Login</button> */}
+                                    <button className='cancel' onClick={() => setSignUp(false)}>Ok</button>
                                 </div>
                             </section>
                         </>

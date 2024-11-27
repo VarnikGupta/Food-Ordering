@@ -5,7 +5,7 @@ import { HiLocationMarker, HiShoppingCart } from 'react-icons/hi';
 import { AiFillCaretDown } from 'react-icons/ai';
 import { CiSearch } from 'react-icons/ci';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import SignUp from '../SignUp/SignUp';
 import LogIn from '../LogIn/LogIn';
@@ -15,6 +15,7 @@ import { logout } from '../Redux/LoginUserSlice';
 import { clearCart } from '../Redux/CartItemSlice';
 import { restaurants } from '../../utils/restaurants/restaurants';
 import GenerateSearchBarItem from '../GenerateSearchBarItem/GenerateSearchBarItem';
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
     const [displayBarOptions, setDisplayBarOptions] = useState(false);
@@ -23,6 +24,7 @@ const Header = () => {
     const [displayLogOut, setDisplayLogOut] = useState(false);
     const [searchValue, setSearchValue] = useState("");
     const [searchBarItems, setSearchBarItems] = useState([]);
+    const navigate = useNavigate();
 
     // const cartItems = useSelector((state) => state.cart_items.items);
     const loginUser = useSelector((state) => state.login_user.user);
@@ -58,6 +60,7 @@ const Header = () => {
     const logOutHandler = () => {
         dispatch(logout());
         dispatch(clearCart());
+        navigate("/")
     }
 
     return (
@@ -130,17 +133,24 @@ const Header = () => {
                             <span className='name' title={loginUser.name}>{loginUser.name}</span>
                             <MdKeyboardArrowDown style={{ rotate: displayLogOut && "180deg" }} />
                             <span className='log-out' style={{ display: displayLogOut && "block" }} onClick={logOutHandler}>Log out</span>
+                            <span className='log-out' style={{ display: displayLogOut && "block" }} onClick={logOutHandler}>Log out</span>
                         </span>
                     }
                 </div>
             </div>
 
             {/* bar */}
-            {/* <div style={{ opacity: !displayBarOptions && 0, zIndex: !displayBarOptions && -1 }} className='bar-options'>
+            <div style={{ opacity: !displayBarOptions && 0, zIndex: !displayBarOptions && -1 }} className='bar-options'>
                 <Link className='link' to='/checkout' onClick={() => setDisplayBarOptions(false)}>
                     <span className='cartIcon-total'>
-                        <HiShoppingCart style={{ color: Object.keys(cartItems).length && "green" }} />
-                        <span className='cartItemTotal' style={{ color: Object.keys(cartItems).length && "white" }}>{Object.keys(cartItems).length}</span>
+                        <HiShoppingCart 
+                        // style={{ color: Object.keys(cartItems).length && "green" }} 
+                        />
+                        <span className='cartItemTotal' 
+                        // style={{ color: Object.keys(cartItems).length && "white" }}
+                        >
+                            {/* {Object.keys(cartItems).length} */}
+                            </span>
                     </span>Cart
                 </Link>
                 {!loginUser ?
@@ -188,7 +198,7 @@ const Header = () => {
                         </div>}
                     </div>
                 </div>
-            </div> */}
+            </div>
 
             {signUp && createPortal(<SignUp setSignUp={setSignUp} setLogIn={setLogIn} />, document.getElementById("portal"))}
             {logIn && createPortal(<LogIn setLogIn={setLogIn} setSignUp={setSignUp} />, document.getElementById("portal"))}
