@@ -8,6 +8,7 @@ import Restaurant from './pages/Restaurant/Restaurant';
 import Cart from './pages/Cart/Cart';
 import axios from "axios";
 import ProfilePage from "./pages/User/User";
+import RestaurantPage from "./pages/RestaurantPage/RestaurantPage";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
@@ -22,7 +23,9 @@ function App() {
         <Route path={"/"} element={<Home />} />
         <Route path={"/user/:id"} element={<ProfilePage />} />
         <Route path={'/checkout'} element={<Cart />} />
-        <Route path={'/kolkata/:restaurant/order/:id'} element={<Restaurant />} />
+        {/* <Route path={'/kolkata/:restaurant/order/:id'} element={<Restaurant />} /> */}
+        {/* <Route path={'/restaurant'} element={<RestaurantPage/>}/> */}
+        <Route path={'/restaurant/:id/:page'} element={<RestaurantPage/>}/>
         {/* </Route> */}
 
         {/* <Route path={'/'} element={<Home filterType={filterType} setFilterType={setFilterType} />} />

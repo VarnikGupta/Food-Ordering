@@ -170,19 +170,19 @@ const createOrder = async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
 
-  const restaurantQueryParams = {
-    TableName: "FoodOrdering",
-    Key: {
-      PK: `Rest#${restId}`,
-      SK: "RestDetails",
-    },
-  };
-  const restaurantResult = await documentClient
-    .get(restaurantQueryParams)
-    .promise();
-  if (!restaurantResult.Item) {
-    return res.status(400).json({ message: "Restaurant not found" });
-  }
+  // const restaurantQueryParams = {
+  //   TableName: "FoodOrdering",
+  //   Key: {
+  //     PK: `Rest#${restId}`,
+  //     SK: "RestDetails",
+  //   },
+  // };
+  // const restaurantResult = await documentClient
+  //   .get(restaurantQueryParams)
+  //   .promise();
+  // if (!restaurantResult.Item) {
+  //   return res.status(400).json({ message: "Restaurant not found" });
+  // }
 
   try {
     const params = {
