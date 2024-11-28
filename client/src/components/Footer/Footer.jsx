@@ -13,7 +13,7 @@ const Footer = () => {
                 <a href='/'><img id='logo' src={zomato} alt="Zomato" loading='lazy' /></a>
 
                 <div className='copyright'>
-                    2023 © Zomato Clone™<br />
+                    2024 © Zomato Clone™<br />
                 </div>
                 <div className='social-media'>
                     <a href='https://www.linkedin.com/in/dipayanmaji/' target='_blank'><ImLinkedin2 /></a>

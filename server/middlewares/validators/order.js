@@ -27,9 +27,9 @@ const orderValidator = [
   body("items.*.price")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Item must have a valid price greater than 0."),
-  body("deliveryAddress")
-    .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Delivery address is required"),
+//   body("deliveryAddress")
+//     .exists({ checkFalsy: true, checkNull: true })
+//     .withMessage("Delivery address is required"),
 ];
 
 const updateOrderValidator = [

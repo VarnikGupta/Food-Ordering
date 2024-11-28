@@ -3,31 +3,30 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import GenerateImage from '../GenerateImage/GenerateImage';
 import { addToCart, removeFromCart } from '../Redux/CartItemSlice';
+import wowMomo from "../../utils/images/orderType/delivery.png"
 
-const CartItem = ({ item }) => {
+const CartItem = ({ item, itemHandler }) => {
     const dispatch = useDispatch();
 
     const addItemsHandler = (e) => {
-        const id = e.target.id;
-        dispatch(addToCart({ id }));
+        itemHandler(item,"add")
     }
     const removeItemsHandler = (e) => {
-        const id = e.target.id;
-        dispatch(removeFromCart({ id }));
+        itemHandler(item,"remove")
     }
 
     return (
         <div className='cart-item' id={item.id}>
             <div className='image-name'>
-                {item.image && <div className='cart-item-image'> <GenerateImage url={item.image} alt={item.name} title={item.name} /></div>}
-                <div className='cart-item-name'>{item.name}</div>
+                {<div className='cart-item-image'> <GenerateImage url={wowMomo} alt={"item"} title={"name"} /></div>}
+                <div className='cart-item-name'>{item.dishName}@ {item.restName}</div>
             </div>
 
             <div className='buttons-price'>
                 <div className='cart-item-buttons'>
-                    <button className='minus-button' id={item.id} onClick={removeItemsHandler}>-</button>
+                    <button className='minus-button' id={item.key} onClick={removeItemsHandler}>-</button>
                     <span className='count'>{item.quantity}</span>
-                    <button className='plus-button' id={item.id} onClick={addItemsHandler}>+</button>
+                    <button className='plus-button' id={item.key} onClick={addItemsHandler}>+</button>
                 </div>
                 <div className='cart-item-price'>₹{item.price * item.quantity}</div>
             </div>

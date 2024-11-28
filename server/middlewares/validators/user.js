@@ -5,14 +5,14 @@ const registerValidator = [
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Name is required"),
   body("email").isEmail().withMessage("Enter valid email address"),
-  body("phone")
-    .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Phone number is required")
-    .isLength(10)
-    .withMessage("Enter a valid phone number"),
-  body("address")
-    .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Address is required"),
+  // body("phone")
+  //   .exists({ checkFalsy: true, checkNull: true })
+  //   .withMessage("Phone number is required")
+  //   .isLength(10)
+  //   .withMessage("Enter a valid phone number"),
+  // body("address")
+  //   .exists({ checkFalsy: true, checkNull: true })
+  //   .withMessage("Address is required"),
   body("password")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Password is required")

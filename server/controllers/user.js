@@ -115,8 +115,7 @@ const login = async (req, res) => {
         });
         return res.status(200).json({
           success: true,
-          token: token,
-          user: { _id: user[0].userId, email: user[0].email, name: user[0].name },
+          user: { _id: user[0].userId, email: user[0].email, name: user[0].name, token: token },
           message: "User logged in successfully",
         });
       } else {
@@ -379,7 +378,7 @@ const getUserCart = async (req, res) => {
     const getUserParams = {
       TableName: "FoodOrdering",
       Key: {
-        PK: `User#${userId}`,
+        PK: `User#${id}`,
         SK: "Profile",
       },
     };
@@ -398,13 +397,17 @@ const getUserCart = async (req, res) => {
       },
     };
     const result = await documentClient.query(params).promise();
-    const cartItems = result.Items[0].items.map((item) => ({
-      dishName: item.dishName,
-      quantity: item.quantity,
-      price: item.price,
-      restId: item.restId,
-      restName: item.restName,
-    }));
+    const item=result.Items[0].items;
+    console.log(item)
+    const cartItems = item && item.length > 0 
+    ? item.map((item) => ({
+        dishName: item.dishName,
+        quantity: item.quantity,
+        price: item.price,
+        restId: item.restId,
+        restName: item.restName,
+    })) 
+    : [];
     return res.status(200).json({
       id,
       cartItems,

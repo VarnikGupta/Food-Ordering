@@ -32,6 +32,7 @@ import subway from "../../utils/images/brands/subway.avif"
 import edabba from "../../utils/images/brands/edabba.avif"
 import { Link } from 'react-router-dom';
 import CartView from '../../components/CartView/CartView';
+import DeliveryCities from '../../components/DeliverCities/DeliverCities';
 
 const inspirationFoods = [
     { imageUrl: biryani, title: "Biryani", page_url: "/search?search=Biryani" },
@@ -60,7 +61,7 @@ const brands = [
     { imageUrl: edabba, title: "Edabba", time: "29 min", page_url: "/kolkata/edabba-esplanade/order/19137878" },
 ]
 
-function Home({ filterType, setFilterType }) {
+function Home() {
     const [itemsScrollLength, setItemsScrollLength] = useState(0);
     const [brandsScrollLength, setBrandsScrollLength] = useState(0);
     const [displayGoToTopBtn, setDisplayGoToTopBtn] = useState(false);
@@ -102,30 +103,32 @@ function Home({ filterType, setFilterType }) {
             {/* <FoodFilters filterType={filterType} setFilterType={setFilterType} /> */}
 
             {/* Inspiration for your first order */}
-            {/* {!filterType && <div className='inspiration-foods-container'>
+            {<div className='inspiration-foods-container'>
                 <div className='inspiration-foods-items'>
                     <h3>Inspiration for your first order</h3>
-                    {itemsScrollLength < 0 && <section className='scroll-btn' id='prev-btn' onClick={itemsPrevScroolHandler}><MdOutlineArrowBackIos /></section>}
+                    {itemsScrollLength < 0 && <section className='scroll-btn' id='prev-btn' 
+                    onClick={itemsPrevScroolHandler}
+                    ><MdOutlineArrowBackIos /></section>}
                     <section className='all-food-items-container'>
                         <div className='all-food-items' style={{ transform: `translate(${itemsScrollLength}px)` }}>
                             {
                                 inspirationFoods.map((item, index) => {
-                                    return <Link className='item-container' key={index} to={item.page_url}>
+                                    return <div className='item-container' key={index}>
                                         <div className='item-image-div'>
                                             <GenerateImage url={item.imageUrl} alt={item.title} />
                                         </div>
                                         <span className='item-title'>{item.title}</span>
-                                    </Link>
+                                    </div>
                                 })
                             }
                         </div>
                     </section>
                     {itemsScrollLength > -1134 && <section className='scroll-btn' id='next-btn' onClick={itemNextScroolHandler}><MdOutlineArrowForwardIos /></section>}
                 </div>
-            </div>} */}
+            </div>}
 
             {/* Top brands for you */}
-            {!filterType && <div className='brands-container'>
+            {<div className='brands-container'>
                 <div className='brands-items'>
                     <h3>Top brands for you</h3>
                     {brandsScrollLength < 0 && <section className='scroll-btn' id='prev-btn' onClick={brandsPrevScroolHandler}><MdOutlineArrowBackIos /></section>}
@@ -133,13 +136,13 @@ function Home({ filterType, setFilterType }) {
                         <div className='all-brands' style={{ transform: `translate(${brandsScrollLength}px)` }}>
                             {
                                 brands.map((brand, index) => {
-                                    return <Link className='brand-container' key={index} to={brand.page_url}>
+                                    return <div className='brand-container' key={index} to={brand.page_url}>
                                         <div className='brand-image-div'>
                                             <GenerateImage url={brand.imageUrl} alt={brand.title} />
                                         </div>
                                         <span className='brand-title'>{brand.title}</span>
                                         <span className='brand-time'>{brand.time}</span>
-                                    </Link>
+                                    </div>
                                 })
                             }
                         </div>
@@ -147,6 +150,7 @@ function Home({ filterType, setFilterType }) {
                     {brandsScrollLength > -756 && <section className='scroll-btn' id='next-btn' onClick={brandsNextScroolHandler}><MdOutlineArrowForwardIos /></section>}
                 </div>
             </div>}
+            <DeliveryCities/>
 
             {/* Restaurants */}
             {/* <Restaurants filterType={filterType} /> */}

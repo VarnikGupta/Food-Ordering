@@ -57,7 +57,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
+    /* cursor: pointer; */
     z-index: 1;
 }
 
@@ -114,7 +114,7 @@
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    cursor: pointer;
+    /* cursor: pointer; */
     text-decoration: none;
 }
 
