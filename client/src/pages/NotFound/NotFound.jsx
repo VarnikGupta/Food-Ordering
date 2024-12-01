@@ -19,7 +19,7 @@ const NotFound = () => {
                         But we know you're hungry, so don't fret or rage
                         Hit that big red button to go back to our homepage
                     </div>
-                    <button className='back-to-home' onClick={() => navigate("/kolkata")}>Back to home</button>
+                    <button className='back-to-home' onClick={() => navigate("/")}>Back to home</button>
                 </div>
             </div>
         </div>

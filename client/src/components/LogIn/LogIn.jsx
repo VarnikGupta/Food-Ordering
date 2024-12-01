@@ -10,7 +10,7 @@ import axios from "axios";
 import { cartInitialization } from "../Redux/CartItemSlice";
 import { useNavigate } from "react-router-dom";
 
-const LogIn = ({ setLogIn, setSignUp }) => {
+const LogIn = ({ setLogIn, setSignUp, isAdmin }) => {
   const [removeScale, setRemoveScale] = useState(false);
   const [unknownError, setUnknownError] = useState(false);
   const [displayPassword, setDisplayPassword] = useState(false);
@@ -263,24 +263,25 @@ const LogIn = ({ setLogIn, setSignUp }) => {
               <hr />
 
               {/* go to sign up */}
-              {!disableLogin ? (
-                <section className="alternate">
-                  {"New to Zomato Clone? "}
-                  <span
-                    className="text-link"
-                    onClick={() => {
-                      setLogIn(false);
-                      setSignUp(true);
-                    }}
-                  >
-                    Create account
+              {!isAdmin &&
+                (!disableLogin ? (
+                  <section className="alternate">
+                    {"New to Zomato Clone? "}
+                    <span
+                      className="text-link"
+                      onClick={() => {
+                        setLogIn(false);
+                        setSignUp(true);
+                      }}
+                    >
+                      Create account
+                    </span>
+                  </section>
+                ) : (
+                  <span className="disclaimer">
+                    If form didn't work within 30 seconds, go back and try again
                   </span>
-                </section>
-              ) : (
-                <span className="disclaimer">
-                  If form didn't work within 30 seconds, go back and try again
-                </span>
-              )}
+                ))}
             </>
           ) : (
             <>
@@ -298,10 +299,14 @@ const LogIn = ({ setLogIn, setSignUp }) => {
                     className="ok"
                     onClick={() => {
                       setLogIn(false);
-                      navigate("/");
+                      if (isAdmin) {
+                        navigate("/admin/dashboard");
+                      } else {
+                        navigate("/");
+                      }
                     }}
                   >
-                    Explore
+                    {isAdmin ? "Go to Admin Dashboard" : "Explore"}
                   </button>
                 </div>
               </section>
@@ -317,9 +322,7 @@ const LogIn = ({ setLogIn, setSignUp }) => {
             </span>
           </section>
 
-          <p className="message">
-            Some Error Occurred!
-          </p>
+          <p className="message">Some Error Occurred!</p>
           <button className="try-again" onClick={() => setUnknownError(false)}>
             Try again
           </button>

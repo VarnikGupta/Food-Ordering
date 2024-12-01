@@ -16,10 +16,10 @@ const OrderModel = ({ setDisplayProtal }) => {
     }, []);
 
     const buttonHandler = () => {
-        dispatch(clearCart());
+        // dispatch(clearCart());
         document.body.style.overflow = "auto";
         setDisplayProtal(false);
-        navigate('/kolkata');
+        navigate('/');
     }
     return (
         <div className='model' onClick={buttonHandler}>

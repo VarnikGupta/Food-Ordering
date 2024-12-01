@@ -24,7 +24,6 @@ const Cart = () => {
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    // const cartItems = useSelector((state) => state.cart_items.items);
     const loginUser = JSON.parse(localStorage.getItem("auth"));
 
 
@@ -34,7 +33,7 @@ const Cart = () => {
                 action: action,
                 item: {
                     dishName: item.dishName,
-                    quantity: 1, // Increment by 1
+                    quantity: 1,
                     price: item.price,
                     restId: item.restId,
                     restName: item.restName,
@@ -135,8 +134,8 @@ const Cart = () => {
             setloginFirst(true);
             // console.log(loginFirst)
         }
-        window.scrollTo(0, 0);
-        document.title = "Checkout | Zomato Clone"
+        // window.scrollTo(0, 0);
+        // document.title = "Checkout | Zomato Clone"
     }, [loginUser, loginFirst])
 
     return (
@@ -146,7 +145,7 @@ const Cart = () => {
                     Object.keys(cartItems).length ?
                         <>
                             <div className='buttons'>
-                                <button className='clear-cart' onClick={() => dispatch(clearCart())}>CLEAR CART</button>
+                                {/* <button className='clear-cart' onClick={clearCart()}>CLEAR CART</button> */}
                             </div>
 
                             <div className='cart-items'>

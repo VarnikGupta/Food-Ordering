@@ -1,76 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
-import Axios from "axios";
-import ProfileView from "../../components/ProfileView/ProfileView";
-import ProfileBody from "../../components/ProfileBody/ProfileBody";
+import css from './User.module.css'
 
-function ProfilePage() {
-  const [userBackendDetails, setUserBackendDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // State to track errors
-  const { id } = useParams(); // Get the `id` from the URL
-  const activeUserDetails = JSON.parse(localStorage.getItem("auth"));
+import UserProfileRightsideBar from '../../components/UserProfileComponents/UserProfileRightsideBar/UserProfileRightsideBar'
 
-  useEffect(() => {
-    if (activeUserDetails) {
-      const getActiveUserDetails = async () => {
-        try {
-          const response = await Axios({
-            method: "get",
-            url: `http://localhost:5000/api/users/${id}`, // Use the `id` from the URL
-            headers: {
-              Authorization: `Bearer ${activeUserDetails.token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          console.log(response.data)
-          setUserBackendDetails(response.data.user);
-        } catch (err) {
-          if (err.response) {
-            // Server responded with a status other than 2xx
-            setError(
-              err.response.data.message || "An error occurred while fetching user details."
-            );
-          } else if (err.request) {
-            // Request was made but no response received
-            setError("Failed to fetch user details. Please check your connection.");
-          } else {
-            // Something else went wrong
-            setError("An unexpected error occurred. Please try again.");
-          }
-        } finally {
-          setLoading(false);
-        }
-      };
-      getActiveUserDetails();
-    } else {
-      setLoading(false);
-      setError("User not logged in or inactive.");
-    }
-  }, [id, activeUserDetails]);
+import UserHero from '../../utils/UserProfileUtils/UserHero/UserHero'
+import LeftSideCardPanel from '../../utils/LeftSideCardPanel/LeftSideCardPanel'
 
-  if (!activeUserDetails || activeUserDetails.active === false) {
-    return <Navigate to="/" replace />;
-  }
+import userImg from '../../utils/images/food1.jpg';
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+const User = () => {
 
-  if (error) {
-    return <div className="error-message">{error}</div>; // Display the error
-  }
+    let data1 = [ 
+        {title: "Reviews", hash: "reviews"}
+    ];
+    let data2 = [ 
+        {title: "Order History", hash: "order-history"},
+        // {title: "My Address", hash: "address"},
+        {title: "Favorite Orders", hash: "favorite-orders"},
+    ];
 
-  if (!userBackendDetails) {
-    return <div>User not found</div>;
-  }
-
-  return (
-    <div>
-      <ProfileView userDetails={userBackendDetails} />
-      <ProfileBody userDetails={userBackendDetails} />
+  return (<div className={css.outerDiv}>
+    <div className={css.box}>
+      <UserHero />
+      <div className={css.mainbody}>
+        <div className={css.leftBox}>
+          <LeftSideCardPanel name='ACTIVITY' data={data1} />
+          <LeftSideCardPanel name='ONLINE ORDERING' data={data2} />
+        </div>
+        <div className={css.rightBox}>
+          <UserProfileRightsideBar />
+        </div>
+      </div>
     </div>
-  );
+  </div>)
 }
 
-export default ProfilePage;
+export default User

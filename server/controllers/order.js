@@ -12,9 +12,14 @@ const validateBody = validationResult.withDefaults({
 });
 
 const getOrderHistory = async (req, res) => {
-  const { userId, restId, status } = req.query;
+  const { userId, restId, status, favourite } = req.query;
+
   try {
     let queryParams = {};
+    let filterExpressions = [];
+    let expressionAttributeValues = {};
+    let expressionAttributeNames = {};
+
     if (userId) {
       const getUserParams = {
         TableName: "FoodOrdering",
@@ -26,7 +31,7 @@ const getOrderHistory = async (req, res) => {
 
       const userResult = await documentClient.get(getUserParams).promise();
       if (!userResult.Item) {
-        res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User not found" });
       }
       queryParams = {
         TableName: "FoodOrdering",
@@ -37,6 +42,11 @@ const getOrderHistory = async (req, res) => {
           ":sk": "Order#",
         },
       };
+      if (favourite === "true") {
+        filterExpressions.push("#isfavourite = :isFavourite");
+        expressionAttributeValues[":isFavourite"] = true;
+        expressionAttributeNames["#isfavourite"] = "isfavourite";
+      }
     } else if (restId) {
       const getRestaurantParams = {
         TableName: "FoodOrdering",
@@ -60,9 +70,18 @@ const getOrderHistory = async (req, res) => {
       };
     }
     if (status) {
-      queryParams.FilterExpression = "#status = :status";
-      queryParams.ExpressionAttributeValues[":status"] = status;
-      queryParams.ExpressionAttributeNames = { "#status": "status" };
+      filterExpressions.push("#status = :status");
+      expressionAttributeValues[":status"] = status;
+      expressionAttributeNames["#status"] = "status";
+    }
+
+    if (filterExpressions.length > 0) {
+      queryParams.FilterExpression = filterExpressions.join(" AND ");
+      queryParams.ExpressionAttributeValues = {
+        ...queryParams.ExpressionAttributeValues,
+        ...expressionAttributeValues,
+      };
+      queryParams.ExpressionAttributeNames = expressionAttributeNames;
     }
 
     const result = await documentClient.query(queryParams).promise();
@@ -74,8 +93,9 @@ const getOrderHistory = async (req, res) => {
       restName: order.restName,
       restId: order.restId,
       deliveryAddress: order.deliveryAddress,
-      isFavourite: order.isFavourite,
+      isFavourite: order.isfavourite,
       totalAmount: order.amount,
+      createdAt: order.createdAt,
       items: order.items.map((item) => ({
         dishName: item.dishName,
         quantity: item.quantity,
@@ -170,19 +190,19 @@ const createOrder = async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
 
-  // const restaurantQueryParams = {
-  //   TableName: "FoodOrdering",
-  //   Key: {
-  //     PK: `Rest#${restId}`,
-  //     SK: "RestDetails",
-  //   },
-  // };
-  // const restaurantResult = await documentClient
-  //   .get(restaurantQueryParams)
-  //   .promise();
-  // if (!restaurantResult.Item) {
-  //   return res.status(400).json({ message: "Restaurant not found" });
-  // }
+  const restaurantQueryParams = {
+    TableName: "FoodOrdering",
+    Key: {
+      PK: `Rest#${restId}`,
+      SK: "RestDetails",
+    },
+  };
+  const restaurantResult = await documentClient
+    .get(restaurantQueryParams)
+    .promise();
+  if (!restaurantResult.Item) {
+    return res.status(400).json({ message: "Restaurant not found" });
+  }
 
   try {
     const params = {
@@ -266,10 +286,10 @@ const updateOrderDetails = async (req, res) => {
       expressionAttributeValues[":status"] = status;
     }
 
-    if (favourite === true) {
+    if (favourite !== undefined) {
       updateExpression.push("#isFavourite = :isFavourite");
-      expressionAttributeNames["#isFavourite"] = "isFavourite";
-      expressionAttributeValues[":isFavourite"] = true;
+      expressionAttributeNames["#isFavourite"] = "isfavourite";
+      expressionAttributeValues[":isFavourite"] = favourite;
     }
     const params = {
       TableName: "FoodOrdering",

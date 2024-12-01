@@ -2,7 +2,6 @@ import './CartItem.scss';
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import GenerateImage from '../GenerateImage/GenerateImage';
-import { addToCart, removeFromCart } from '../Redux/CartItemSlice';
 import wowMomo from "../../utils/images/orderType/delivery.png"
 
 const CartItem = ({ item, itemHandler }) => {
@@ -18,8 +17,8 @@ const CartItem = ({ item, itemHandler }) => {
     return (
         <div className='cart-item' id={item.id}>
             <div className='image-name'>
-                {<div className='cart-item-image'> <GenerateImage url={wowMomo} alt={"item"} title={"name"} /></div>}
-                <div className='cart-item-name'>{"item.dishName"}@ {"item.restName"}</div>
+                {<div className='cart-item-image'> <img src={ wowMomo} /> </div>}
+                <div className='cart-item-name'>{item.dishName}@ {item.restName}</div>
             </div>
 
             <div className='buttons-price'>

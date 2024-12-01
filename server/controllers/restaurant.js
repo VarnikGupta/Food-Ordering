@@ -117,6 +117,7 @@ const getMenu = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      name: restaurantResult.Item.name,
       menu,
       message: "Menu fetched successfully",
     });

@@ -25,7 +25,7 @@ const LoginFirstModel = ({ setloginFirst }) => {
           <BsExclamationLg />
         </div>
         <h2 className="heading">Please login first!</h2>
-        <p className="text">After login you will be able to order</p>
+        {/* <p className="text">After login you will be able to order</p> */}
         <button className="cancel" onClick={() => handleClick()}>
           OK
         </button>

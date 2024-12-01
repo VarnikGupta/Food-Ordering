@@ -15,7 +15,7 @@ import { logout } from "../Redux/LoginUserSlice";
 import { clearCart } from "../Redux/CartItemSlice";
 import { restaurants } from "../../utils/restaurants/restaurants";
 import GenerateSearchBarItem from "../GenerateSearchBarItem/GenerateSearchBarItem";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = () => {
   const [displayBarOptions, setDisplayBarOptions] = useState(false);
@@ -25,6 +25,7 @@ const Header = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchBarItems, setSearchBarItems] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const handleSearchNavigation = () => {
     navigate("/search");
   };
@@ -97,43 +98,47 @@ const Header = () => {
         </Link>
 
         {/* search bar */}
-        <div className="search-container">
-          <div className="search" onClick={handleSearchNavigation}>
-            <span id="search-icon">
-              <CiSearch />
-            </span>
-            <input
-              onChange={searchbarHandler}
-              value={searchValue}
-              placeholder="Search for restaurant or a dish"
-            />
-            {searchValue && (
-              <div className="search-bar-items-container">
-                {searchBarItems.length > 0 ? (
-                  <div className="search-bar-items">
-                    {searchBarItems.map((item, index) => {
-                      return (
-                        <GenerateSearchBarItem
-                          key={index}
-                          restaurant={item}
-                          setSearchValue={setSearchValue}
-                          setDisplayBarOptions={setDisplayBarOptions}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="not-match-container">
-                    <p className="oops">Oops!</p>
-                    <span className="text">
-                      We could not understand what you mean, try rephrasing the
-                      query.
-                    </span>
+        <div className="search-container1">
+          {location.pathname !== "/search" && (
+            <div className="search-container">
+              <div className="search" onClick={handleSearchNavigation}>
+                <span id="search-icon">
+                  <CiSearch />
+                </span>
+                <input
+                  onChange={searchbarHandler}
+                  value={searchValue}
+                  placeholder="Search for restaurant or a dish"
+                />
+                {searchValue && (
+                  <div className="search-bar-items-container">
+                    {searchBarItems.length > 0 ? (
+                      <div className="search-bar-items">
+                        {searchBarItems.map((item, index) => {
+                          return (
+                            <GenerateSearchBarItem
+                              key={index}
+                              restaurant={item}
+                              setSearchValue={setSearchValue}
+                              setDisplayBarOptions={setDisplayBarOptions}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="not-match-container">
+                        <p className="oops">Oops!</p>
+                        <span className="text">
+                          We could not understand what you mean, try rephrasing
+                          the query.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* cart-login-signup */}

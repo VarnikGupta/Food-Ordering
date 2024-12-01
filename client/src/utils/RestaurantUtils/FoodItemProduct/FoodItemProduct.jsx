@@ -1,43 +1,49 @@
-import {useState} from 'react'
+import { useState } from "react";
+import React from "react";
+import { useDispatch } from "react-redux";
+import GenerateImage from "../../../components/GenerateImage/GenerateImage";
+import wowMomo from "../../../utils/images/food1.jpg";
+import css from "./FoodItemProduct.scss";
 
-import css from './FoodItemProduct.module.css'
+import starGIcon from "../../../utils/images/starGIcon.png";
+import starGrIcon from "../../../utils/images/starGrIcon.png";
 
-import starGIcon from '../../../utils/images/starGIcon.png'
-import starGrIcon from '../../../utils/images/starGrIcon.png'
-// import starGrIcon from '/icons/starGrIcon.png'
+const FoodItemProduct = ({ item, itemHandler }) => {
+  // State to track if the item has been added to the cart
+  const [isAdded, setIsAdded] = useState(false);
 
-const FoodItemProduct = (props) => {
-    let {imgSrc, ttl, votes, price, desc, vegNonveg, mustTry} = props.data;
-    let dataset = props?.dataset;
-    const [readMore, setReadMore] = useState(false)
-  return <div className={css.outerDiv} data-id={dataset} id={props.id}>
-    <div className={css.innerDiv}>
-        {/* {imgSrc ? <div className={css.imgBox}> */}
-            <img src={imgSrc} className={css.img} alt='food item' />
-            {/* <img src={vegNonveg} className={css.typeImg} alt='veg or nonveg' /> */}
-        {/* </div> : <img src={vegNonveg} className={css.typeImg2} alt="veg or nonveg" />} */}
-        <div className={css.box}>
-            <div className={css.ttl}>{ttl}</div>
-            {/* {mustTry ? <div className={css.tag}>MUST TRY</div> : "" } */}
-            <div className={css.ratings}>
-                {/* <div className={css.stars}>
-                    <img src={starGIcon} className={css.starIcon} />
-                    <img src={starGIcon} className={css.starIcon} />
-                    <img src={starGIcon} className={css.starIcon} />
-                    <img src={starGrIcon} className={css.starIcon} />
-                    <img src={starGrIcon} className={css.starIcon} />
-                </div>
-                <div className={css.votesTxt}>{votes} votes</div> */}
-            </div>
-            <div className={css.price}>₹{price}</div>
-            <div className={css.desc}>
-                {readMore ? desc : desc.substring(0, 100)}
-                ...
-                {!readMore ? <span className={css.readMore} onClick={() => setReadMore(true)}>read more</span> : ""}
-            </div>
+  // Add item to cart and update state
+  const addItemsHandler = () => {
+    if (!isAdded) {
+      itemHandler(item, "add");
+      setIsAdded(true); // Mark item as added to the cart
+    }
+  };
+
+  return (
+    <div className="cart-item" id={item.id}>
+      <div className="image-name">
+        <div className="cart-item-image">
+          <GenerateImage url={wowMomo} alt={"item"} title={"name"} />
         </div>
-    </div>
-  </div>
-}
+        <div className="cart-item-name">{item.dishName}</div>
+      </div>
 
-export default FoodItemProduct
+      <div className="buttons-price">
+        <div className="cart-item-buttons">
+          {/* Button text changes based on isAdded state */}
+          <span
+            className="count"
+            onClick={addItemsHandler}
+            style={{ cursor: isAdded ? "not-allowed" : "pointer" }} // Disable pointer if added
+          >
+            {isAdded ? "Added to Cart" : "ADD TO CART"}
+          </span>
+        </div>
+        <div className="cart-item-price">₹{item.cost}</div>
+      </div>
+    </div>
+  );
+};
+
+export default FoodItemProduct;
