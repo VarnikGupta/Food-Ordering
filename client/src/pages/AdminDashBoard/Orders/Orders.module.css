@@ -12,7 +12,7 @@
 }
 
 .outerDiv:hover{
-    cursor: pointer;
+    /* cursor: pointer; */
     box-shadow: rgba(28, 28, 28, 0.08) 0px 2px 8px;
 }
 

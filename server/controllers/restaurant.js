@@ -51,6 +51,51 @@ const addRestaurant = async (req, res) => {
   }
 };
 
+const getAllrestaurants = async (req, res) => {
+  try {
+    const params = {
+      TableName: "FoodOrdering",
+      IndexName: "GSI1",
+      KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
+      ExpressionAttributeNames: {
+        "#pk": "GSI1_PK",
+        "#sk": "GSI1_SK",
+      },
+      ExpressionAttributeValues: {
+        ":pk": "Restaurant",
+        ":sk": "Rest#",
+      },
+    };
+
+    // Use `query` instead of `quer`
+    const result = await documentClient.query(params).promise();
+
+    // Check if any restaurants are found
+    if (!result.Items || result.Items.length === 0) {
+      return res.status(404).json({ message: "No Restaurants found" });
+    }
+
+    // Extract and map the result
+    const restaurants = result.Items.map(({ restId, name, location, contact, rating, ratingCount }) => ({
+      restId,
+      name,
+      location,
+      contact,
+      rating,
+      ratingCount,
+    }));
+
+    return res.json({
+      message: "Restaurants fetched successfully",
+      restaurants, // Return the array of restaurants
+    });
+  } catch (err) {
+    console.error("Error retrieving restaurants:", err);
+    return res.status(500).json({ err: true, message: err.message });
+  }
+};
+
+
 const getRestaurantById = async (req, res) => {
   const id = req.params.id;
   try {
@@ -106,14 +151,12 @@ const getMenu = async (req, res) => {
 
     const existingMenuResult = await documentClient.query(params).promise();
     console.log(existingMenuResult);
-    const menu = existingMenuResult.Items.map((item) => (
-      {
-        dishName: item.dishName,
-        cuisine: item.cuisine,
-        cost: item.cost,
-        category: item.category
-      }
-    ));
+    const menu = existingMenuResult.Items.map((item) => ({
+      dishName: item.dishName,
+      cuisine: item.cuisine,
+      cost: item.cost,
+      category: item.category,
+    }));
 
     return res.status(200).json({
       success: true,
@@ -213,4 +256,10 @@ const updateMenu = async (req, res) => {
   }
 };
 
-module.exports = { addRestaurant, getRestaurantById, getMenu, updateMenu };
+module.exports = {
+  addRestaurant,
+  getAllrestaurants,
+  getRestaurantById,
+  getMenu,
+  updateMenu,
+};

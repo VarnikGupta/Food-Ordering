@@ -4,6 +4,7 @@ const {
   getMenu,
   updateMenu,
   getRestaurantById,
+  getAllrestaurants,
 } = require("../controllers/restaurant");
 const {
   restaurantValidator,
@@ -14,12 +15,12 @@ const router = express.Router();
 
 router.post("/", restaurantValidator, addRestaurant);
 
+router.get("/", authorizeAdmin, getAllrestaurants);
+
 router.get("/:id", getRestaurantById);
 
 router.get("/:id/menu", getMenu);
 
-router.put("/:id/menu", updateMenuValidator,
-  // authorizeAdmin,
-  updateMenu);
+router.put("/:id/menu", updateMenuValidator, authorizeAdmin, updateMenu);
 
 module.exports = router;
