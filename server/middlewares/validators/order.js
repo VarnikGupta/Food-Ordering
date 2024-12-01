@@ -27,9 +27,9 @@ const orderValidator = [
   body("items.*.price")
     .exists({ checkFalsy: true, checkNull: true })
     .withMessage("Item must have a valid price greater than 0."),
-  body("deliveryAddress")
-    .exists({ checkFalsy: true, checkNull: true })
-    .withMessage("Delivery address is required"),
+//   body("deliveryAddress")
+//     .exists({ checkFalsy: true, checkNull: true })
+//     .withMessage("Delivery address is required"),
 ];
 
 const updateOrderValidator = [
@@ -43,8 +43,10 @@ const updateOrderValidator = [
           "Status must be one of: 'Preparing', 'Completed', or 'Cancelled'"
         ),
       body("favourite")
-        .exists({ checkFalsy: true, checkNull: true })
-        .withMessage("favourite is required"),
+        .exists({ checkNull: true })
+        .withMessage("favourite is required")
+        .isBoolean()
+        .withMessage("favourite must be a boolean value"),
     ],
     {
       message: "At least one field from status or favourite must be provided",

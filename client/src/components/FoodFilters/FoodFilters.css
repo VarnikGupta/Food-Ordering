@@ -1,0 +1,73 @@
+.food-filters-container {
+    width: 100%;
+    max-width: 100%;
+    height: max-content;
+    padding: 1.8rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 2px solid rgb(248, 248, 248);
+    /* box-shadow: 0px 1px 3px rgb(248, 248, 248); */
+}
+
+.food-filters-container .food-filters {
+    width: 100%;
+    max-width: 68.8rem;
+    height: max-content;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0 1rem;
+}
+
+.food-filters-container .food-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.food-filters .filter-option {
+    height: 100%;
+    color: rgb(156, 156, 156);
+    background-color: rgb(255, 255, 255);
+    border: 1px solid rgb(207, 207, 207);
+    border-radius: 0.6rem;
+    box-shadow: rgba(54, 54, 54, 0.06) 0px 1px 2px;
+    font-size: 15px;
+    padding: 0.6rem 0.7rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.food-filters .filter-option:hover {
+    background-color: rgb(248, 248, 248);
+}
+
+.food-filters .selected {
+    border: 1px solid rgb(239, 79, 95);
+    color: rgb(255, 255, 255);
+    background-color: rgb(239, 79, 95);
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.food-filters .selected:hover {
+    border: 1px solid rgb(218, 77, 91);
+    /* color: rgb(255, 255, 255); */
+    background-color: rgb(218, 77, 91);
+}
+
+@media screen and (max-width: 480px) {
+    .food-filters-container .food-filters {
+        flex-wrap: nowrap;
+        overflow: auto hidden;
+    }
+}

@@ -1,0 +1,352 @@
+.header * {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.header-container {
+    width: 100%;
+    max-width: 100%;
+    height: 4.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-container .header {
+    width: 100%;
+    max-width: 68.8rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 0 1rem;
+}
+
+/* zomato logo */
+.header #logo {
+    min-width: 7.9rem;
+    height: 1.7rem;
+}
+
+/* location & restaurant search */
+.header .search-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 3.3rem;
+    background: rgb(255, 255, 255);
+    border-radius: 0.48rem;
+    box-shadow: rgba(28, 28, 28, 0.08) 0px 2px 8px;
+    border: 1px solid rgb(232, 232, 232);
+}
+.search-container1{
+    display: flex;
+    align-items: center;
+    width: 55.7%;
+    height: 3.3rem;
+    background: rgb(255, 255, 255);
+    border-radius: 0.48rem;
+    /* box-shadow: rgba(28, 28, 28, 0.08) 0px 2px 8px;
+    border: 1px solid rgb(232, 232, 232); */
+}
+
+/* location search */
+/* .search-container .location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+}
+
+.search-container .location #location-icon {
+    font-size: 25px;
+    color: rgb(255, 126, 139);
+    padding-top: 0.4rem;
+}
+
+.search-container .location input {
+    border: none;
+    outline: none;
+}
+
+.search-container .location input::placeholder {
+    color: rgb(130, 130, 130);
+    font-size: 1rem;
+}
+
+.search-container .location #down-arrow-icon {
+    color: rgb(79, 79, 79);
+}*/
+
+/* divider b/w loction and restaurant search */
+/*.search-container .divider {
+    width: 0rem;
+    height: 1.2rem;
+    border: 0.05rem solid rgb(207, 207, 207);
+    margin-left: 5px;
+} */
+
+/* restaurant search */
+.search-container .search {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 12px;
+    position: relative;
+}
+
+.search-container .search #search-icon {
+    font-size: 25px;
+    color: rgb(130, 130, 130);
+    padding-top: 0.4rem;
+}
+
+.search-container .search input {
+    width: 100%;
+    height: 96%;
+    border: none;
+    outline: none;
+    border-radius: 0 0.48rem 0.48rem 0;
+}
+
+.search-container .search input::placeholder {
+    color: rgb(130, 130, 130);
+    font-size: 1rem;
+}
+
+/* search bar items */
+.search .search-bar-items-container {
+    width: inherit;
+    max-height: 35rem;
+    border-radius: 0.8rem;
+    background-color: white;
+    border: 1px solid rgb(232, 232, 232);
+    box-shadow: 0px 2px 8px rgba(28, 28, 28, 0.08);
+    transition: opacity 0.25s ease 0s, top 0.25s ease 0s;
+    padding: 1rem 0;
+    box-sizing: border-box;
+    overflow: auto;
+    position: absolute;
+    top: 4rem;
+    left: 0;
+    z-index: 5;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.search-bar-items-container .search-bar-items {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-bar-items-container .not-match-container {
+    padding: 0 1rem;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.search-bar-items-container .not-match-container .oops {
+    margin: 0;
+    color: rgb(156, 156, 156);
+    font-weight: 500;
+}
+
+.search-bar-items-container .not-match-container .text {
+    font-size: 0.9rem;
+    color: rgb(156, 156, 156);
+}
+
+.search:focus-within .search-bar-items-container {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Login-Signup */
+.header .authentications {
+    display: flex;
+    gap: 2.7rem;
+    margin-left: 3rem;
+}
+
+.header .authentications .link {
+    text-decoration: none;
+    color: rgb(105, 105, 105);
+    font-size: 1.2rem;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    display: flex;
+}
+
+.authentications .link .cartIcon-total {
+    position: relative;
+}
+
+.authentications .link .cartIcon-total svg {
+    font-size: 1.8rem;
+    /* color: green; */
+}
+
+.authentications .link .cartIcon-total .cartItemTotal {
+    width: 0.8rem;
+    position: absolute;
+    left: 9px;
+    font-size: 0.7rem;
+    top: 2px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+
+}
+
+.login-user {
+    width: 8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 0.2rem;
+    position: relative;
+    /* background-color: red; */
+}
+
+.login-user .name {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+    overflow: hidden;
+}
+
+.login-user .log-out {
+    box-sizing: border-box;
+    width: 8rem;
+    border-radius: 3px;
+    padding: 0.2rem 0.7rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: rgb(255, 78, 95);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 5px -1px, rgba(0, 0, 0, 0.14) 0px 6px 10px 0px, rgba(0, 0, 0, 0.12) 0px 1px 18px 0px;
+    text-align: center;
+    cursor: pointer;
+    position: absolute;
+    top: 5rem;
+    left: 0;
+    display: none;
+}
+
+.login-user .log-out:hover {
+    background-color: rgb(222, 71, 86);
+}
+
+/* bar */
+.header .bar {
+    width: 1.5rem;
+    height: 1rem;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.header .bar span {
+    width: 100%;
+    height: 3px;
+    display: block;
+    background-color: rgb(28, 28, 28);
+    transition: 0.25s;
+}
+
+.header-container .bar-options {
+    background-color: white;
+    position: absolute;
+    top: 4.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 0 0 2rem;
+    gap: 2rem;
+    transition: 0.25s;
+    z-index: 5;
+}
+
+.header-container .bar-options .link {
+    text-decoration: none;
+    color: rgb(105, 105, 105);
+    font-size: 1.2rem;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    display: flex;
+}
+
+.bar-options .link .cartIcon-total {
+    position: relative;
+}
+
+.bar-options .link .cartIcon-total svg {
+    font-size: 1.8rem;
+}
+
+.bar-options .link .cartIcon-total .cartItemTotal {
+    width: 0.8rem;
+    position: absolute;
+    left: 9px;
+    font-size: 0.7rem;
+    top: 4px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+
+}
+
+.header-container .bar-options .search-container {
+    display: flex;
+    align-items: center;
+    width: 90%;
+    height: 3.3rem;
+    background: rgb(255, 255, 255);
+    border-radius: 0.48rem;
+    box-shadow: rgba(28, 28, 28, 0.08) 0px 2px 8px;
+    border: 1px solid rgb(232, 232, 232);
+}
+
+@media screen and (max-width: 900px) {
+    .search-container .location {
+        display: none;
+    }
+
+    .search-container .divider {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 800px) {
+    .header .search-container {
+        display: none;
+    }
+
+    .header .authentications {
+        display: none;
+    }
+
+    .header .bar {
+        display: flex;
+    }
+
+    .header-container .header {
+        justify-content: space-between;
+    }
+}
+
+@media screen and (min-width: 800px) {
+    .header-container .bar-options {
+        opacity: 0;
+        z-index: -1;
+    }
+}

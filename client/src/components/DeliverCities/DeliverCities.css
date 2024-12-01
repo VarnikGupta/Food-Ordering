@@ -1,0 +1,33 @@
+.outerDiv {
+    width: 100%;
+    height: auto;
+    margin: 3rem 0;
+}
+
+.title {
+    width: 100%;
+    /* border: 2px solid grey; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 3rem;
+}
+
+.titleTxt {
+    font-size: var(--font-title-sz1);
+    font-weight: var(--font-title-weight);
+}
+
+.bld {
+    font-size: var(--font-title-sz1);
+    font-weight: 600;
+}
+
+.placesCards {
+    margin: 2rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}

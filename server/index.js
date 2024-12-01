@@ -7,12 +7,15 @@ const reviewRoutes = require("./routes/review");
 const searchRoutes = require("./routes/search");
 const { create } = require("./database/tables");
 const { deleteTable } = require("./database/db");
+const cors = require('cors');
+
 
 const app = express();
 const PORT = process.env.PORT;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cors());
 
 // create();
 // deleteTable("FoodOrdering")
