@@ -122,11 +122,6 @@ const OrderHistory = ({ hashId }) => {
                 />
               );
             })}
-            {/* {viewDet &&
-              createPortal(
-                <OrderDetails id={"orderId"} setViewDet={setViewDet} />,
-                document.getElementById("portal")
-              )} */}
           </div>
           <Pagination
             totalItems={data.length}

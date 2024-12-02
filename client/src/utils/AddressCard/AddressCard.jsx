@@ -2,9 +2,9 @@ import { useState } from 'react'
 
 import css from './AddressCard.module.css'
 
-import rightArrow from '/icons/right-arrow.png'
+import rightArrow from '../images/icons/right-arrow.png'
 
-import DeleteModal from '../../../Modals/DeleteModal/DeleteModal'
+import DeleteModal from '../DeleteModal/DeleteModal'
 
 const AddressCard = ({title, address}) => {
 

@@ -76,6 +76,7 @@ const AdminOrdersPage = () => {
                 <div className={css.imgBox}></div>
                 <div className={css.txtBox1}>
                   <div className={css.title}>Order ID: {order.orderId}</div>
+                  <div className={css.title}>User ID: {order.userId}</div>
                   <div className={css.contact}>
                     {/* Contact: {restaurant.contact} */}
                   </div>

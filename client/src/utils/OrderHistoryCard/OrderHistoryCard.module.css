@@ -1,7 +1,7 @@
 .outerDiv{
     width: 300px;
     height: auto;
-    max-height: 350px;
+    /* max-height: 350px; */
     margin: 0.5rem;
     border: var(--brd2);
     border-radius: 5px;

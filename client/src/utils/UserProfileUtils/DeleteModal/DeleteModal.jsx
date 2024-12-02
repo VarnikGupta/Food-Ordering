@@ -1,25 +1,19 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Formik, Form } from "formik";
-import * as Yup from "yup";
 import axios from "axios";
+import { BsExclamationLg } from "react-icons/bs";
+import { useParams, useNavigate } from "react-router-dom";
 
 import css from "./DeleteModal.scss";
-
 import closeBtn from "../../images/closeBtn.jpg";
-import RedBtnHov from "../../RedBtnHov/RedBtnHov";
-import WhiteBtnHov from "../../WhiteBtnHov/WhiteBtnHov";
-import TextUtil from "../../TextUtil/TextUtil";
-import { useParams } from "react-router-dom";
-import { BsExclamationLg } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
 
 const DeleteModal = ({ setloginFirst }) => {
   const navigate = useNavigate();
-
   const { id } = useParams();
   const loginUser = JSON.parse(localStorage.getItem("auth"));
+
+  const [error, setError] = useState("");
 
   const handleClick = () => {
     axios
@@ -35,7 +29,11 @@ const DeleteModal = ({ setloginFirst }) => {
         window.location.reload(); // Close the modal after success
       })
       .catch((error) => {
-        console.error("Delete Failed:", error.response?.data || error.message);
+        if (error.response?.status === 400 && error.response?.data?.message === "Active orders prevent user deletion") {
+          setError("You have active orders. Account cannot be deleted.");
+        } else {
+          console.error("Delete Failed:", error.response?.data || error.message);
+        }
       });
   };
 
@@ -49,13 +47,15 @@ const DeleteModal = ({ setloginFirst }) => {
         <div className="exclamation">
           <BsExclamationLg />
         </div>
-        <h2 className="heading">Account will be deleted!</h2>
-
-        {/* <p className="text">After login you will be able to order</p> */}
+        <h2 className="heading">
+          {error ? error : "Account will be deleted!"}
+        </h2>
         <div className="btns">
-          <button className="cancel" onClick={() => handleClick()}>
-            Ok
-          </button>
+          {!error && (
+            <button className="cancel" onClick={() => handleClick()}>
+              Ok
+            </button>
+          )}
           <button className="cancel" onClick={() => cancelUpdate()}>
             Cancel
           </button>

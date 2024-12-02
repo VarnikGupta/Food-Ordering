@@ -14,7 +14,7 @@ const User = () => {
     ];
     let data2 = [ 
         {title: "Order History", hash: "order-history"},
-        // {title: "My Address", hash: "address"},
+        {title: "My Address", hash: "address"},
         {title: "Favorite Orders", hash: "favorite-orders"},
     ];
 

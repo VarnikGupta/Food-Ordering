@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import css from './MyAddresses.module.css'
 
-import AddressCard from '../../../../AddressCard/AddAddressCard';
+import AddressCard from '../../../../AddressCard/AddressCard';
 import AddAddressCard from '../../../../AddressCard/AddAddressCard';
 import UserProfileNoData from "../../UserProfileNoData/UserProfileNoData";
 

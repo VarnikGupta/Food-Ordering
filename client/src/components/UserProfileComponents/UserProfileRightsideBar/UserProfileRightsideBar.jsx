@@ -56,9 +56,9 @@ let UserProfileRightsideBar = () => {
       case "order-history":
         setCurrComp(<OrderHistory hashId={hashId} />);
         break;
-      // case "address":
-      //   setCurrComp(<MyAddresses hashId={hashId} />);
-      //   break;
+      case "address":
+        setCurrComp(<MyAddresses hashId={hashId} />);
+        break;
       case "favorite-orders":
         setCurrComp(<FavoriteOrders hashId={hashId} />);
         break;

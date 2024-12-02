@@ -185,11 +185,12 @@ const Header = () => {
                 style={{ rotate: displayLogOut && "180deg" }}
               />
               <span
-                className="log-out"
+                className="profile-option"
                 style={{ display: displayLogOut && "block" }}
-                onClick={logOutHandler}
               >
-                Log out
+                <Link to={`/user/${loginUser._id}/reviews`} className="profile-link">
+                  Profile
+                </Link>
               </span>
               <span
                 className="log-out"
