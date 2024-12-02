@@ -1,30 +1,50 @@
-import React from 'react'
+import React from "react";
+import css from "./Pagination.module.css";
 
-import css from './Pagination.module.css'
+const Pagination = ({ totalItems, currentPage, pageSize, onPageChange }) => {
+  const totalPages = Math.ceil(totalItems / pageSize);
 
-import rightArrowIcon from '../images/icons/right-arrow1.png'
+  // Generate page numbers
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
 
-const Pagination = ({page, size, total}) => {
-  return <div className={css.pagination}>
-        <div className={css.txt}>Showing {page}-{page*size} of {total} orders</div>
-        <div className={css.nums}>
-            {+total > 30 ? 
-                <>
-                    <div className={[css.count, css.active]?.join(" ")}>1</div>
-                    <div className={css.count}>2</div>
-                    <div className={css.count}>3</div>
-                </>
-                : +total > 10 ? 
-                <>
-                    <div className={[css.count, css.active]?.join(" ")}>1</div>
-                    <div className={css.count}>2</div>
-                </>
-                 :
-                    <div className={css.count}>1</div>
-            }
-            <div className={css.imgBox}><img className={css.img} src={rightArrowIcon} alt='right arrow' /></div>
-        </div>
+  return (
+    <div className={css.pagination}>
+      <div className={css.info}>
+        Showing {(currentPage - 1) * pageSize + 1}-
+        {Math.min(currentPage * pageSize, totalItems)} of {totalItems} items
+      </div>
+      <div className={css.pageNumbers}>
+        <button
+          className={css.navButton}
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          Previous
+        </button>
+        {pageNumbers.map((page) => (
+          <button
+            key={page}
+            className={`${css.pageNumber} ${
+              page === currentPage ? css.active : ""
+            }`}
+            onClick={() => onPageChange(page)}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          className={css.navButton}
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          Next
+        </button>
+      </div>
     </div>
-}
+  );
+};
 
-export default Pagination
+export default Pagination;

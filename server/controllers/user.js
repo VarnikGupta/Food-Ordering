@@ -359,7 +359,7 @@ const getUserById = async (req, res) => {
     };
     const userResult = await documentClient.get(params).promise();
     if (!userResult.Item) {
-      res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     const { userId, name, email, phone, age, address } = userResult.Item;
     return res.json({

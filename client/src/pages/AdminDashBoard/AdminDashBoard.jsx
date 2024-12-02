@@ -3,16 +3,28 @@ import axios from "axios";
 import css from "./AdminDashBoard.module.css";
 import imgSrc from "../../utils/images/food1.jpg";
 import { useNavigate } from "react-router-dom";
+import RedBtnHov from "../../utils/RedBtnHov/RedBtnHov";
+import MenuModal from "../../utils/MenuModal/MenuModal"; // Import the modal component
+import {createPortal} from "react-dom"
 
 const AdminDashBoard = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null); // Track selected restaurant
   const loginUser = JSON.parse(localStorage.getItem("auth"));
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleRestaurantClick = (restId) => {
     navigate(`/admin/dashboard/orders`, { state: { restId } });
+  };
+
+  const handleClick = (restaurant) => {
+    setSelectedRestaurant(restaurant); // Set the selected restaurant
+  };
+
+  const closeModal = () => {
+    setSelectedRestaurant(null); // Close the modal
   };
 
   useEffect(() => {
@@ -54,7 +66,7 @@ const AdminDashBoard = () => {
         <div
           key={restaurant.restId}
           className={css.outerDiv}
-          onClick={() => handleRestaurantClick(restaurant.restId)}
+          // onClick={() =>}
         >
           <div className={css.innerDiv}>
             <div className={css.sec1}>
@@ -89,10 +101,28 @@ const AdminDashBoard = () => {
                 {restaurant.location.state}, {restaurant.location.country} -{" "}
                 {restaurant.location.pincode}
               </span>
+              <span>
+                <RedBtnHov
+                  txt="View Orders"
+                  onClick={() => handleRestaurantClick(restaurant.restId)}
+                />
+                <RedBtnHov
+                  txt="Edit Menu"
+                  onClick={() => handleClick(restaurant)}
+                />
+              </span>
             </div>
           </div>
         </div>
       ))}
+      {selectedRestaurant &&
+        createPortal(
+          <MenuModal
+            restaurant={selectedRestaurant}
+            setModal={closeModal}
+          />,
+          document.getElementById("portal")
+        )}
     </div>
   );
 };

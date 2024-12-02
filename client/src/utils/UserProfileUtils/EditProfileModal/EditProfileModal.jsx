@@ -74,13 +74,17 @@ const EditProfileModal = ({ setModal }) => {
       alert("Please provide at least one field to update.");
       return;
     }
+    if (!/^\d{10}$/.test(values.phone)) {
+      alert("Please provide valid phone number");
+      return;
+    }
 
     const payload = {
       ...(values.fullName && { name: values.fullName }),
       ...(values.phone && { phone: values.phone }),
       ...(values.address && { address: values.address }),
-      };
-      // console.log(payload)
+    };
+    // console.log(payload)
 
     axios
       .put(`http://localhost:5000/api/users/${id}`, payload, {

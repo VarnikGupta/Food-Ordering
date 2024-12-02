@@ -16,11 +16,14 @@ import { clearCart } from "../Redux/CartItemSlice";
 import { restaurants } from "../../utils/restaurants/restaurants";
 import GenerateSearchBarItem from "../GenerateSearchBarItem/GenerateSearchBarItem";
 import { useNavigate, useLocation } from "react-router-dom";
+import AddAddressPortal from "../../utils/AddAddressPortal/AddAddressPortal";
+import AddRes from "../AddRes/AddRes";
 
 const Header = () => {
   const [displayBarOptions, setDisplayBarOptions] = useState(false);
   const [signUp, setSignUp] = useState(false);
   const [logIn, setLogIn] = useState(false);
+  const [addRes, setAddRes] = useState(false);
   const [displayLogOut, setDisplayLogOut] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchBarItems, setSearchBarItems] = useState([]);
@@ -157,6 +160,12 @@ const Header = () => {
             </span>
             Cart
           </Link>
+          <div className="link" onClick={() => setAddRes(true)}>
+            <span className="cartIcon-total">
+              <span className="cartItemTotal"></span>
+            </span>
+            Add restaurant
+          </div>
           {!loginUser ? (
             <>
               <span className="link" onClick={() => setLogIn(true)}>
@@ -320,6 +329,11 @@ const Header = () => {
       {logIn &&
         createPortal(
           <LogIn setLogIn={setLogIn} setSignUp={setSignUp} />,
+          document.getElementById("portal")
+        )}
+      {addRes &&
+        createPortal(
+          <AddRes setModal={setAddRes} />,
           document.getElementById("portal")
         )}
     </div>

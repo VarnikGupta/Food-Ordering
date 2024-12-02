@@ -8,9 +8,11 @@ import edit from "../../images/food1.jpg";
 import { useParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import EditProfileModal from "../EditProfileModal/EditProfileModal";
+import DeleteModal from "../DeleteModal/DeleteModal";
 
 const UserHero = () => {
   const [modal, setModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
   const [userData, setUserData] = useState(null); // State to hold user data
   const [error, setError] = useState(null); // State to hold any error messages
 
@@ -94,7 +96,7 @@ const UserHero = () => {
               <div className={css.rightBoxInner}>
                 <div
                   className={css.editBtn}
-                  onClick={() => setModal((val) => !val)}
+                  onClick={() => setDeleteModal((val) => !val)}
                 >
                   <span className={css.editProfileIconBox}>
                     {/* <img src={edit} alt="edit icon" className={css.editProfileIcon} /> */}
@@ -109,6 +111,11 @@ const UserHero = () => {
       {modal &&
         createPortal(
           <EditProfileModal setModal={setModal} />,
+          document.getElementById("portal")
+        )}
+      {deleteModal &&
+        createPortal(
+          <DeleteModal setloginFirst={setDeleteModal} />,
           document.getElementById("portal")
         )}
     </>
