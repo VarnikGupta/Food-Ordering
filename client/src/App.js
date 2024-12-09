@@ -12,6 +12,7 @@ import RestaurantPage from "./pages/RestaurantPage/RestaurantPage";
 import Search from "./pages/Search/Search";
 import Admin from "./pages/Admin/Admin";
 import AdminDashBoard from "./pages/AdminDashBoard/AdminDashBoard";
+import AdminOrdersPage from "./pages/AdminDashBoard/Orders/Orders";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
@@ -27,6 +28,7 @@ function App() {
         <Route path={'/search'} element={<Search />} />
         <Route path={'/admin'} element={<Admin />} />
         <Route path={'/admin/dashboard'} element={<AdminDashBoard />} />
+        <Route path={'/admin/dashboard/orders'} element={<AdminOrdersPage />} />
         <Route path={'*'} element={<NotFound />} />
       </Routes>
     </div>

@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const { v4 } = require("uuid");
-const { documentClient } = require("../database/db.js");
+const { documentClient } = require("../config/db.js");
+const { redisCalls } = require("../services/cache.js");
 
 const validateBody = validationResult.withDefaults({
   formatter: (err) => {
@@ -51,9 +52,73 @@ const addRestaurant = async (req, res) => {
   }
 };
 
+const getAllrestaurants = async (req, res) => {
+  try {
+    const getCache = await redisCalls("string", "get", `allRestaurants`);
+    if (getCache) {
+      return res.json({
+        message: "Restaurants fetched successfully from cache",
+        restauarnts: [...JSON.parse(getCache)],
+      });
+    }
+    const params = {
+      TableName: "FoodOrdering",
+      IndexName: "GSI1",
+      KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
+      ExpressionAttributeNames: {
+        "#pk": "GSI1_PK",
+        "#sk": "GSI1_SK",
+      },
+      ExpressionAttributeValues: {
+        ":pk": "Restaurant",
+        ":sk": "Rest#",
+      },
+    };
+
+    const result = await documentClient.query(params).promise();
+
+    if (!result.Items || result.Items.length === 0) {
+      return res.status(404).json({ message: "No Restaurants found" });
+    }
+
+    const restaurants = result.Items.map(
+      ({ restId, name, location, contact, rating, ratingCount }) => ({
+        restId,
+        name,
+        location,
+        contact,
+        rating,
+        ratingCount,
+      })
+    );
+    await redisCalls(
+      "string",
+      "set",
+      `allRestaurants`,
+      600,
+      JSON.stringify(restaurants)
+    );
+    return res.json({
+      message: "Restaurants fetched successfully",
+      restaurants,
+    });
+  } catch (err) {
+    console.error("Error retrieving restaurants:", err);
+    return res.status(500).json({ err: true, message: err.message });
+  }
+};
+
 const getRestaurantById = async (req, res) => {
   const id = req.params.id;
   try {
+    const getCache = await redisCalls("hash", "get", `rest:${id}`);
+    if (getCache) {
+      getCache.location = JSON.parse(getCache.location);
+      return res.json({
+        message: "Restaurant profile fetched successfully from cache",
+        restaurant: getCache,
+      });
+    }
     const params = {
       TableName: "FoodOrdering",
       Key: {
@@ -67,6 +132,14 @@ const getRestaurantById = async (req, res) => {
     }
     const { restId, name, location, contact, rating, ratingCount } =
       result.Item;
+    await redisCalls("hash", "set", `rest:${id}`, 600, {
+      restId: restId,
+      name: name,
+      contact: contact,
+      rating: rating,
+      ratingCount: ratingCount,
+      location: JSON.stringify(location),
+    });
     return res.json({
       message: "Restaurant profile fetched successfully",
       restaurant: { restId, name, location, contact, rating, ratingCount },
@@ -80,22 +153,41 @@ const getRestaurantById = async (req, res) => {
 const getMenu = async (req, res) => {
   const restId = req.params.id;
   try {
-    const restaurantQueryParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `Rest#${restId}`,
-        SK: "RestDetails",
-      },
-    };
-    const restaurantResult = await documentClient
-      .get(restaurantQueryParams)
-      .promise();
-    console.log("rest profile results", restaurantResult);
-    if (!restaurantResult.Item) {
-      return res.status(404).json({ message: "Restaurant not found" });
+    let restaurant = await redisCalls("hash", "get", `rest:${restId}`);
+
+    if (!restaurant) {
+      const restaurantQueryParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `Rest#${restId}`,
+          SK: "RestDetails",
+        },
+      };
+      const restaurantResult = await documentClient
+        .get(restaurantQueryParams)
+        .promise();
+
+      if (!restaurantResult.Item) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      restaurant = {
+        name: restaurantResult.Item.name,
+      };
     }
 
-    const params = {
+    const cachedMenu = await redisCalls("string", "get", `menu:${restId}`);
+    console.log(cachedMenu);
+    if (cachedMenu) {
+      return res.json({
+        success: true,
+        name: restaurant.name,
+        menu: cachedMenu,
+        message: "Menu fetched successfully from cache",
+      });
+    }
+
+    const menuQueryParams = {
       TableName: "FoodOrdering",
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
@@ -104,20 +196,21 @@ const getMenu = async (req, res) => {
       },
     };
 
-    const existingMenuResult = await documentClient.query(params).promise();
-    console.log(existingMenuResult);
-    const menu = existingMenuResult.Items.map((item) => (
-      {
-        dishName: item.dishName,
-        cuisine: item.cuisine,
-        cost: item.cost,
-        category: item.category
-      }
-    ));
+    const existingMenuResult = await documentClient
+      .query(menuQueryParams)
+      .promise();
+    const menu = existingMenuResult.Items.map((item) => ({
+      dishName: item.dishName,
+      cuisine: item.cuisine,
+      cost: item.cost,
+      category: item.category,
+    }));
+
+    await redisCalls("string", "set", `menu:${restId}`, 600, menu);
 
     return res.status(200).json({
       success: true,
-      name: restaurantResult.Item.name,
+      name: restaurant.name,
       menu,
       message: "Menu fetched successfully",
     });
@@ -160,7 +253,7 @@ const updateMenu = async (req, res) => {
     };
 
     const existingMenuResult = await documentClient.query(params).promise();
-    console.log("existing", existingMenuResult);
+    // console.log("existing", existingMenuResult);
     const existingMenu = existingMenuResult.Items || [];
 
     const existingMenuMap = existingMenu.reduce((map, item) => {
@@ -197,7 +290,8 @@ const updateMenu = async (req, res) => {
     };
 
     let resultt = await documentClient.batchWrite(batchWriteParams).promise();
-    console.log(resultt);
+    // console.log(resultt);
+    await redisCalls("string", "del", `menu:${restId}`);
 
     return res.status(200).json({
       restaurantId: restId,
@@ -213,4 +307,10 @@ const updateMenu = async (req, res) => {
   }
 };
 
-module.exports = { addRestaurant, getRestaurantById, getMenu, updateMenu };
+module.exports = {
+  addRestaurant,
+  getAllrestaurants,
+  getRestaurantById,
+  getMenu,
+  updateMenu,
+};

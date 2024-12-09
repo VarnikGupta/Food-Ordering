@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const { v4 } = require("uuid");
-const { documentClient } = require("../database/db.js");
+const { documentClient } = require("../config/db.js");
+const { redisCalls } = require("../services/cache.js");
 
 const validateBody = validationResult.withDefaults({
   formatter: (err) => {
@@ -15,23 +16,52 @@ const getOrderHistory = async (req, res) => {
   const { userId, restId, status, favourite } = req.query;
 
   try {
+    let cacheKey = "orderHistory:";
+    if (userId) {
+      cacheKey += `userId:${userId}`;
+    }
+    if (restId) {
+      cacheKey += `restId:${restId}`;
+    }
+    if (status) {
+      cacheKey += `:status:${status}`;
+    }
+    if (favourite) {
+      cacheKey += `:favourite:${favourite}`;
+    }
+
+    const cachedOrderHistory = await redisCalls(
+      "string",
+      "get",
+      cacheKey
+    );
+    if (cachedOrderHistory) {
+      return res.status(200).json({
+        message: "Order History fetched successfully from cache",
+        orderHistory: JSON.parse(cachedOrderHistory),
+      });
+    }
+
     let queryParams = {};
     let filterExpressions = [];
     let expressionAttributeValues = {};
     let expressionAttributeNames = {};
 
     if (userId) {
-      const getUserParams = {
-        TableName: "FoodOrdering",
-        Key: {
-          PK: `User#${userId}`,
-          SK: "Profile",
-        },
-      };
+      const getUser = await redisCalls("hash", "get", userId);
+      if (!getUser) {
+        const getUserParams = {
+          TableName: "FoodOrdering",
+          Key: {
+            PK: `User#${userId}`,
+            SK: "Profile",
+          },
+        };
 
-      const userResult = await documentClient.get(getUserParams).promise();
-      if (!userResult.Item) {
-        return res.status(404).json({ message: "User not found" });
+        const userResult = await documentClient.get(getUserParams).promise();
+        if (!userResult.Item) {
+          return res.status(404).json({ message: "User not found" });
+        }
       }
       queryParams = {
         TableName: "FoodOrdering",
@@ -48,16 +78,19 @@ const getOrderHistory = async (req, res) => {
         expressionAttributeNames["#isfavourite"] = "isfavourite";
       }
     } else if (restId) {
-      const getRestaurantParams = {
-        TableName: "FoodOrdering",
-        Key: {
-          PK: `Rest#${restId}`,
-          SK: "RestDetails",
-        },
-      };
-      const result = await documentClient.get(getRestaurantParams).promise();
-      if (!result.Item) {
-        return res.status(404).json({ message: "Restaurant not found" });
+      const getRest = await redisCalls("hash", "get", userId);
+      if (!getRest) {
+        const getRestaurantParams = {
+          TableName: "FoodOrdering",
+          Key: {
+            PK: `Rest#${restId}`,
+            SK: "RestDetails",
+          },
+        };
+        const result = await documentClient.get(getRestaurantParams).promise();
+        if (!result.Item) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
       }
       queryParams = {
         TableName: "FoodOrdering",
@@ -102,6 +135,14 @@ const getOrderHistory = async (req, res) => {
         price: item.price,
       })),
     }));
+
+    await redisCalls(
+      "string",
+      "set",
+      cacheKey,
+      3600,
+      JSON.stringify(orderHistory)
+    );
 
     return res.status(200).json({
       message: "Order History fetched successfully",
@@ -304,6 +345,14 @@ const updateOrderDetails = async (req, res) => {
     };
 
     const updatedResult = await documentClient.update(params).promise();
+    let cacheKey = "orderHistory:";
+    if (userId) {
+      cacheKey += `userId:${userId}`;
+    }
+    if (favourite) {
+      cacheKey += `:favourite:${favourite}`;
+    }
+    await redisCalls("string", "del", cacheKey);
 
     return res.status(200).json({
       orderId,

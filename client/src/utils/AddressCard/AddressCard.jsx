@@ -2,9 +2,9 @@ import { useState } from 'react'
 
 import css from './AddressCard.module.css'
 
-import rightArrow from '/icons/right-arrow.png'
+import rightArrow from '../images/icons/right-arrow.png'
 
-import DeleteModal from '../../../Modals/DeleteModal/DeleteModal'
+import DeleteModal from '../DeleteModal/DeleteModal'
 
 const AddressCard = ({title, address}) => {
 
@@ -14,8 +14,8 @@ const AddressCard = ({title, address}) => {
         <div className={css.outerDiv}>
             <div className={css.innerDiv}>
                 <div>
-                    <div className={css.ttl}>{title}</div>
-                    <div className={css.address}>{address}</div>
+                    {/* <div className={css.ttl}>{title}</div> */}
+                    <div className={css.address}>{address.addressLine}</div>
                 </div>
                 <div className={css.btns}>
                     <button className={css.btn1}>Edit <span><img className={css.rightArrow} src={rightArrow} alt="Right Arrow" /></span></button>

@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
-const { documentClient } = require("../database/db");
+const { documentClient } = require("../config/db");
+const { redisCalls } = require("../services/cache");
 
 const validateBody = validationResult.withDefaults({
   formatter: (err) => {
@@ -18,11 +19,29 @@ const search = async (req, res) => {
   }
 
   const { name, address, minRating, maxRating, minCost, maxCost } = req.query;
+
   try {
+    const cacheKey = `search:${JSON.stringify({
+      name,
+      address,
+      minRating,
+      maxRating,
+      minCost,
+      maxCost,
+    })}`;
+
+    const cachedResults = await redisCalls("string", "get", cacheKey);
+    if (cachedResults) {
+      return res.status(200).json({
+        message: "Search results fetched from cache",
+        searchItems: cachedResults,
+      });
+    }
+
     const restaurantParams = {
       TableName: "FoodOrdering",
       IndexName: "GSI1",
-      KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
+      KeyConditionExpression: "#pk = :pk AND begins_with(#sk, :sk)",
       FilterExpression: "contains(#name, :name)",
       ExpressionAttributeNames: {
         "#pk": "GSI1_PK",
@@ -37,46 +56,21 @@ const search = async (req, res) => {
     };
 
     if (address) {
-      if (address.addressLine) {
-        restaurantParams.FilterExpression +=
-          " AND contains(#location.#addressLine, :addressLine)";
-        restaurantParams.ExpressionAttributeValues[":addressLine"] =
-          address.addressLine;
-        restaurantParams.ExpressionAttributeNames["#location"] = "location";
-        restaurantParams.ExpressionAttributeNames["#addressLine"] =
-          "addressLine";
-      }
-
-      if (address.street) {
-        restaurantParams.FilterExpression +=
-          " AND contains(#location.#street, :street)";
-        restaurantParams.ExpressionAttributeValues[":street"] = address.street;
-        restaurantParams.ExpressionAttributeNames["#location"] = "location";
-        restaurantParams.ExpressionAttributeNames["#street"] = "street";
-      }
-
-      if (address.state) {
-        restaurantParams.FilterExpression +=
-          " AND contains(#location.#state, :state)";
-        restaurantParams.ExpressionAttributeValues[":state"] = address.state;
-        restaurantParams.ExpressionAttributeNames["#location"] = "location";
-        restaurantParams.ExpressionAttributeNames["#state"] = "state";
-      }
-
-      if (address.country) {
-        restaurantParams.FilterExpression +=
-          " AND contains(#location.#country, :country)";
-        restaurantParams.ExpressionAttributeValues[":country"] =
-          address.country;
-        restaurantParams.ExpressionAttributeNames["#location"] = "location";
-        restaurantParams.ExpressionAttributeNames["#country"] = "country";
-      }
+      ["addressLine", "street", "state", "country"].forEach((field) => {
+        if (address[field]) {
+          const attrName = `#${field}`;
+          const attrValue = `:${field}`;
+          restaurantParams.FilterExpression += ` AND contains(#location.${attrName}, ${attrValue})`;
+          restaurantParams.ExpressionAttributeValues[attrValue] = address[field];
+          restaurantParams.ExpressionAttributeNames[`#location`] = "location";
+          restaurantParams.ExpressionAttributeNames[attrName] = field;
+        }
+      });
     }
 
     if (minRating || maxRating) {
-      restaurantParams.FilterExpression += ` AND #rating BETWEEN :minRating AND :maxRating`;
-      restaurantParams.ExpressionAttributeValues[":minRating"] =
-        parseInt(minRating) || 1;
+      restaurantParams.FilterExpression += " AND #rating BETWEEN :minRating AND :maxRating";
+      restaurantParams.ExpressionAttributeValues[":minRating"] = parseInt(minRating) || 1;
       restaurantParams.ExpressionAttributeValues[":maxRating"] = parseInt(maxRating) || 5;
       restaurantParams.ExpressionAttributeNames["#rating"] = "rating";
     }
@@ -84,8 +78,7 @@ const search = async (req, res) => {
     const dishParams = {
       TableName: "FoodOrdering",
       IndexName: "GSI1",
-      KeyConditionExpression: "#pk = :pk AND begins_with(#sk,:sk)",
-      // FilterExpression: "",
+      KeyConditionExpression: "#pk = :pk AND begins_with(#sk, :sk)",
       ExpressionAttributeNames: {
         "#pk": "GSI1_PK",
         "#sk": "GSI1_SK",
@@ -97,10 +90,9 @@ const search = async (req, res) => {
     };
 
     if (minCost || maxCost) {
-      dishParams.FilterExpression += `#cost BETWEEN :minCost AND :maxCost`;
+      dishParams.FilterExpression = `#cost BETWEEN :minCost AND :maxCost`;
       dishParams.ExpressionAttributeValues[":minCost"] = parseInt(minCost) || 1;
-      dishParams.ExpressionAttributeValues[":maxCost"] =
-        parseInt(maxCost) || 10000;
+      dishParams.ExpressionAttributeValues[":maxCost"] = parseInt(maxCost) || 10000;
       dishParams.ExpressionAttributeNames["#cost"] = "cost";
     }
 
@@ -125,13 +117,15 @@ const search = async (req, res) => {
       cuisine: item.cuisine,
       cost: item.cost,
       restName: item.restName,
-      restId: item.restId
+      restId: item.restId,
     }));
 
     const searchItems = [...restaurants, ...dishes];
 
+    await redisCalls("string", "set", cacheKey, 600, searchItems);
+
     return res.status(200).json({
-      message: "Search results successful",
+      message: "Search results fetched successfully",
       searchItems,
     });
   } catch (err) {
@@ -142,5 +136,6 @@ const search = async (req, res) => {
     });
   }
 };
+
 
 module.exports = { search };

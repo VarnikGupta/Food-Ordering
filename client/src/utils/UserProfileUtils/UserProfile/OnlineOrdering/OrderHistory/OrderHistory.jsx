@@ -16,10 +16,17 @@ const OrderHistory = ({ hashId }) => {
   const [isData, setIsData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loginUser = JSON.parse(localStorage.getItem("auth"));
   const { id } = useParams();
   const userId = id;
+  const pageSize = 6;
+
+  const paginatedData = data.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const fetchOrderHistory = async () => {
     setLoading(true);
@@ -47,14 +54,17 @@ const OrderHistory = ({ hashId }) => {
             })),
             isFavourite: order.isFavourite,
             status: order.status,
-            orderedOn: new Date(order.createdAt * 1000).toLocaleString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
+            orderedOn: new Date(order.createdAt * 1000).toLocaleString(
+              "en-US",
+              {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }
+            ),
             itemTotal: order.totalAmount,
             coupon: null, // Adjust if coupon details are provided
             taxesandcharges: "Not available", // Adjust if tax details are provided
@@ -98,10 +108,10 @@ const OrderHistory = ({ hashId }) => {
         <p>Loading...</p>
       ) : error ? (
         <p className={css.error}>{error}</p>
-      ) : data.length > 0 ? (
+      ) : paginatedData.length > 0 ? (
         <>
           <div className={css.innerDiv}>
-            {data.map((item) => {
+            {paginatedData.map((item) => {
               return (
                 <OrderHistoryCard
                   udata={item}
@@ -112,13 +122,13 @@ const OrderHistory = ({ hashId }) => {
                 />
               );
             })}
-            {viewDet &&
-              createPortal(
-                <OrderDetails id={"orderId"} setViewDet={setViewDet} />,
-                document.getElementById("portal")
-              )}
           </div>
-          <Pagination page="1" total={data.length} size="10" />
+          <Pagination
+            totalItems={data.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
         </>
       ) : (
         <UserProfileNoData hashId={hashId} />

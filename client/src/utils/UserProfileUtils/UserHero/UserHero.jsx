@@ -8,14 +8,16 @@ import edit from "../../images/food1.jpg";
 import { useParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import EditProfileModal from "../EditProfileModal/EditProfileModal";
+import DeleteModal from "../DeleteModal/DeleteModal";
 
 const UserHero = () => {
   const [modal, setModal] = useState(false);
-  const [userData, setUserData] = useState(null); // State to hold user data
-  const [error, setError] = useState(null); // State to hold any error messages
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [userData, setUserData] = useState(null); 
+  const [error, setError] = useState(null); 
 
-  const loginUser = JSON.parse(localStorage.getItem("auth")); // Assuming the user data is stored in localStorage
-  const { id } = useParams(); // Get the logged-in user's ID from localStorage
+  const loginUser = JSON.parse(localStorage.getItem("auth"));
+  const { id } = useParams(); 
 
   useEffect(() => {
     if (!id) {
@@ -30,13 +32,13 @@ const UserHero = () => {
           `http://localhost:5000/api/users/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${loginUser.token}`, // Assuming you're using JWT tokens for authentication
+              Authorization: `Bearer ${loginUser.token}`,
             },
           }
         );
 
         if (response.status === 200) {
-          setUserData(response.data); // Set the user data to state
+          setUserData(response.data);
         }
         console.log(response.data);
       } catch (err) {
@@ -94,7 +96,7 @@ const UserHero = () => {
               <div className={css.rightBoxInner}>
                 <div
                   className={css.editBtn}
-                  onClick={() => setModal((val) => !val)}
+                  onClick={() => setDeleteModal((val) => !val)}
                 >
                   <span className={css.editProfileIconBox}>
                     {/* <img src={edit} alt="edit icon" className={css.editProfileIcon} /> */}
@@ -109,6 +111,11 @@ const UserHero = () => {
       {modal &&
         createPortal(
           <EditProfileModal setModal={setModal} />,
+          document.getElementById("portal")
+        )}
+      {deleteModal &&
+        createPortal(
+          <DeleteModal setloginFirst={setDeleteModal} />,
           document.getElementById("portal")
         )}
     </>
