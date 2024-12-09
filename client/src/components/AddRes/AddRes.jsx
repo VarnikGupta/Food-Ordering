@@ -18,11 +18,11 @@ const AddRes = ({ setModal }) => {
   const [data, setData] = useState("");
 
   const handleOpenNextDialog = (values) => {
-    if (!values.fullName || !values.phone || values.phone.length !== 10) {
+    if (!values.fullName || !values.phone ) {
       alert("Please provide all fields.");
       return;
     }
-    if (!/^\d{10}$/.test(values.phone)) {
+    if (values.phone.length !== 10 || !/^\d{10}$/.test(values.phone)) {
       alert("Please provide valid phone number");
       return;
     }

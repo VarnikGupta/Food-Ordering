@@ -14,8 +14,8 @@ const AddressCard = ({title, address}) => {
         <div className={css.outerDiv}>
             <div className={css.innerDiv}>
                 <div>
-                    <div className={css.ttl}>{title}</div>
-                    <div className={css.address}>{address}</div>
+                    {/* <div className={css.ttl}>{title}</div> */}
+                    <div className={css.address}>{address.addressLine}</div>
                 </div>
                 <div className={css.btns}>
                     <button className={css.btn1}>Edit <span><img className={css.rightArrow} src={rightArrow} alt="Right Arrow" /></span></button>

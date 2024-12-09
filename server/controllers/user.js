@@ -1,9 +1,10 @@
 const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const { v4 } = require("uuid");
-const { dynamoDB, documentClient } = require("../database/db.js");
+const { dynamoDB, documentClient } = require("../config/db.js");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
+const { redisCalls } = require("../services/cache.js");
 dotenv.config();
 
 const validateBody = validationResult.withDefaults({
@@ -113,9 +114,19 @@ const login = async (req, res) => {
         const token = jwt.sign(payload, jwtSecretKey, {
           expiresIn: "1h",
         });
+        await redisCalls("user", "set", user[0].userId, 3600, {
+          name: user[0].name,
+          email: user[0].email,
+          address: user[0].address,
+        });
         return res.status(200).json({
           success: true,
-          user: { _id: user[0].userId, email: user[0].email, name: user[0].name, token: token },
+          user: {
+            _id: user[0].userId,
+            email: user[0].email,
+            name: user[0].name,
+            token: token,
+          },
           message: "User logged in successfully",
         });
       } else {
@@ -166,8 +177,9 @@ const updateUserDetails = async (req, res) => {
     }
 
     if (address) {
-      updateExpression.push("address = :address");
+      updateExpression.push("#address = :address");
       expressionValues[":address"] = address;
+      expressionNames["#address"] = "address";
     }
 
     const updateParams = {
@@ -184,6 +196,27 @@ const updateUserDetails = async (req, res) => {
     };
 
     const updateResult = await documentClient.update(updateParams).promise();
+
+    const ttl = await redisCalls(null, "ttl", `user:${userId}`);
+
+    const existingCache = await redisCalls("hash", "get", `user:${userId}`);
+
+    const existingAddress = existingCache?.address
+      ? JSON.parse(existingCache.address)
+      : [];
+
+    const updatedAddress = address
+      ? [
+          ...existingAddress,
+          ...address.filter((item) => !existingAddress.includes(item)),
+        ]
+      : existingAddress;
+
+    await redisCalls("hash", "set", `user:${userId}`, ttl, {
+      ...(name && { name: name }),
+      ...(phone && { phone: phone }),
+      ...(updatedAddress.length && { address: JSON.stringify(updatedAddress) }),
+    });
 
     if (name) {
       const queryParams = {
@@ -214,6 +247,8 @@ const updateUserDetails = async (req, res) => {
 
       await Promise.all(updateReviewPromises);
     }
+    const reviewCacheKey = `reviews:user#${userId}`;
+    await redisCalls("string", "del", reviewCacheKey);
 
     const result = updateResult.Attributes;
 
@@ -350,6 +385,14 @@ const deleteUser = async (req, res) => {
 const getUserById = async (req, res) => {
   const { id } = req.params;
   try {
+    const getCache = await redisCalls("hash", "get", `user:${id}`);
+    if (getCache) {
+      getCache.address = JSON.parse(getCache.address);
+      return res.json({
+        message: "User profile fetched successfully from cache",
+        user: getCache,
+      });
+    }
     const params = {
       TableName: "FoodOrdering",
       Key: {
@@ -362,6 +405,13 @@ const getUserById = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     const { userId, name, email, phone, age, address } = userResult.Item;
+    await redisCalls("hash", "set", `user:${id}`, 3600, {
+      name: name,
+      email: email,
+      ...(age && { age: age }),
+      ...(phone && { phone: phone }),
+      ...(address && { address: JSON.stringify(address) }),
+    });
     return res.json({
       message: "User profile fetched successfully",
       user: { userId, name, email, phone, age, address },
@@ -375,18 +425,28 @@ const getUserById = async (req, res) => {
 const getUserCart = async (req, res) => {
   const id = req.params.id;
   try {
-    const getUserParams = {
-      TableName: "FoodOrdering",
-      Key: {
-        PK: `User#${id}`,
-        SK: "Profile",
-      },
-    };
+    const getUser = await redisCalls("hash", "get", `user:${id}`);
+    if (!getUser) {
+      const getUserParams = {
+        TableName: "FoodOrdering",
+        Key: {
+          PK: `User#${id}`,
+          SK: "Profile",
+        },
+      };
 
-    const userResult = await documentClient.get(getUserParams).promise();
+      const userResult = await documentClient.get(getUserParams).promise();
 
-    if (!userResult.Item) {
-      return res.status(404).json({ message: "User not found" });
+      if (!userResult.Item) {
+        return res.status(404).json({ message: "User not found" });
+      }
+    }
+    const getCache = await redisCalls("hash", "get", `cart:${id}`);
+    if (getCache) {
+      getCache.cartItems = JSON.parse(getCache.cartItems);
+      return res.json({
+        ...getCache,
+      });
     }
     const params = {
       TableName: "FoodOrdering",
@@ -397,19 +457,24 @@ const getUserCart = async (req, res) => {
       },
     };
     const result = await documentClient.query(params).promise();
-    const item=result.Items[0].items;
-    console.log(item)
-    const cartItems = item && item.length > 0 
-    ? item.map((item) => ({
-        dishName: item.dishName,
-        quantity: item.quantity,
-        price: item.price,
-        restId: item.restId,
-        restName: item.restName,
-    })) 
-    : [];
+    const item = result.Items[0].items;
+    console.log(item);
+    const cartItems =
+      item && item.length > 0
+        ? item.map((item) => ({
+            dishName: item.dishName,
+            quantity: item.quantity,
+            price: item.price,
+            restId: item.restId,
+            restName: item.restName,
+          }))
+        : [];
+    await redisCalls("hash", "set", `cart:${id}`, 3600, {
+      id: item[0].restId,
+      ...(cartItems && { cartItems: JSON.stringify(cartItems) }),
+    });
     return res.status(200).json({
-      id,
+      id: item[0].restId,
       cartItems,
     });
   } catch (err) {
@@ -448,10 +513,19 @@ const updateUserCart = async (req, res) => {
         SK: `Cart`,
       },
     };
+    let cartData = await redisCalls("hash", "get", `cart:${userId}`);
+    console.log(cartData)
+    let cartItems = [];
+    let currentRestId = null;
 
-    const existingCart = await documentClient.get(params).promise();
-    let cartItems = existingCart.Item?.items || [];
-    let currentRestId = existingCart.Item?.restId || null;
+    if (cartData) {
+      cartItems = JSON.parse(cartData.cartItems) || [];
+      currentRestId = cartData.id || null;
+    } else {
+      const existingCart = await documentClient.get(params).promise();
+      cartItems = existingCart.Item?.items || [];
+      currentRestId = existingCart.Item?.restId || null;
+    }
     if (action === "remove" && cartItems.length === 0) {
       return res.status(400).json({
         message: "Cannot remove items from an empty cart",
@@ -510,6 +584,12 @@ const updateUserCart = async (req, res) => {
     };
 
     const updateResult = await documentClient.update(updateParams).promise();
+
+    const ttl = await redisCalls(null, "ttl", `cart:${userId}`);
+    await redisCalls("hash", "set", `cart:${userId}`, ttl, {
+      id: userId,
+      cartItems: JSON.stringify(cartItems),
+    });
 
     return res.status(200).json({
       success: true,

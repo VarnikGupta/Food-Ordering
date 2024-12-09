@@ -5,8 +5,8 @@ const restaurantRoutes = require("./routes/restaurant");
 const orderRoutes = require("./routes/order");
 const reviewRoutes = require("./routes/review");
 const searchRoutes = require("./routes/search");
-const { create } = require("./database/tables");
-const { deleteTable } = require("./database/db");
+const { create } = require("./config/tables");
+const { deleteTable } = require("./config/db");
 const cors = require('cors');
 
 

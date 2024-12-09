@@ -69,7 +69,7 @@ const Header = () => {
 
   const logOutHandler = () => {
     dispatch(logout());
-    dispatch(clearCart());
+    // dispatch(clearCart());
     navigate("/");
   };
 

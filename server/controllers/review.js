@@ -1,5 +1,6 @@
-const { documentClient } = require("../database/db");
+const { documentClient } = require("../config/db");
 const { validationResult } = require("express-validator");
+const { redisCalls } = require("../services/cache");
 
 const validateBody = validationResult.withDefaults({
   formatter: (err) => {
@@ -135,6 +136,15 @@ const getReviews = async (req, res) => {
     };
   }
   try {
+    const cacheKey = userId ? `reviews:user:${userId}` : `reviews:restaurant:${restId}`;
+    const cachedReviews = await redisCalls("string", "get", cacheKey);
+    if (cachedReviews) {
+      return res.status(200).json({
+        reviews: cachedReviews,
+        message: "Reviews fetched successfully from cache",
+      });
+    }
+
     if (restId) {
       const getRestParams = {
         TableName: "FoodOrdering",
@@ -164,7 +174,7 @@ const getReviews = async (req, res) => {
       }
     }
     const result = await documentClient.query(queryParams).promise();
-    const reviews = result.Items.map((review)=>({
+    const reviews = result.Items.map((review) => ({
       restId: review.restId,
       userDeleted: review.userDeleted,
       userName: review.userName,
@@ -174,15 +184,16 @@ const getReviews = async (req, res) => {
       createdAt: review.createdAt,
       restName: review.restName
     })) || [];
-    return res
-      .status(200)
-      .json({ reviews, message: "Reviews fetched successfully" });
+
+    await redisCalls("string", "set", cacheKey, 600, reviews);
+
+    return res.status(200).json({
+      reviews,
+      message: "Reviews fetched successfully",
+    });
   } catch (error) {
     console.error("Error querying reviews:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Internal Server Error" }),
-    };
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 

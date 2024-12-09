@@ -1,7 +1,7 @@
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import css from "./AddAddressForm.module.css";
 import closeIcon from "../images/icons/close.png";
 import TextUtil from "../TextUtil/TextUtil";
@@ -14,6 +14,8 @@ const AddAddressForm = ({ data, setAddressModal }) => {
     state: "",
     country: "",
   };
+  const loginUser = JSON.parse(localStorage.getItem("auth"));
+  const { id } = useParams();
 
   const validationSchema = Yup.object({
     addressLine: Yup.string()
@@ -30,8 +32,56 @@ const AddAddressForm = ({ data, setAddressModal }) => {
   });
   const navigate = useNavigate();
   const submitForm = async (values) => {
+    if (data) {
+      addRestaurant(values);
+    } else {
+      addAddress(values);
+    }
+  };
+
+  const addAddress = async (values) => {
     const payload = {
-      name: data.fullName, // Placeholder name; replace with dynamic value if needed
+      address: {
+        addressLine: values.addressLine,
+        street: values.street,
+        pincode: values.pincode,
+        state: values.state,
+        country: values.country,
+      },
+    };
+
+    try {
+      console.log(id, loginUser.token);
+      const response = await axios.put(
+        `http://localhost:5000/api/users/${id}`,
+        payload,
+        {
+          headers: {
+            authorization: `Bearer ${loginUser.token}`,
+          },
+        }
+      );
+      alert(`Address updated successfully!!`);
+      //   setPage(1);
+      setAddressModal(false);
+      // navigate("/");
+    } catch (error) {
+      console.log(error);
+      console.error(
+        "Error updating address:",
+        error.response?.data || error.message
+      );
+      alert(
+        `Failed to update address: ${
+          error.response?.data.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const addRestaurant = async (values) => {
+    const payload = {
+      name: data.fullName,
       location: {
         addressLine: values.addressLine,
         street: values.street,
@@ -39,7 +89,7 @@ const AddAddressForm = ({ data, setAddressModal }) => {
         state: values.state,
         country: values.country,
       },
-      contact: data.phone, // Placeholder contact; replace with dynamic value if needed
+      contact: data.phone,
     };
 
     try {
@@ -48,9 +98,7 @@ const AddAddressForm = ({ data, setAddressModal }) => {
         payload
       );
       console.log("Success:", response.data);
-      alert(
-        `Restaurant created successfully! ID: ${response.data.restaurantId}`
-      );
+      alert(`Restaurant created successfully!!`);
       //   setPage(1);
       setAddressModal(false);
       navigate("/"); // Go back or close modal after success

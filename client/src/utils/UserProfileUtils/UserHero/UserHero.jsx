@@ -13,11 +13,11 @@ import DeleteModal from "../DeleteModal/DeleteModal";
 const UserHero = () => {
   const [modal, setModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
-  const [userData, setUserData] = useState(null); // State to hold user data
-  const [error, setError] = useState(null); // State to hold any error messages
+  const [userData, setUserData] = useState(null); 
+  const [error, setError] = useState(null); 
 
-  const loginUser = JSON.parse(localStorage.getItem("auth")); // Assuming the user data is stored in localStorage
-  const { id } = useParams(); // Get the logged-in user's ID from localStorage
+  const loginUser = JSON.parse(localStorage.getItem("auth"));
+  const { id } = useParams(); 
 
   useEffect(() => {
     if (!id) {
@@ -32,13 +32,13 @@ const UserHero = () => {
           `http://localhost:5000/api/users/${id}`,
           {
             headers: {
-              Authorization: `Bearer ${loginUser.token}`, // Assuming you're using JWT tokens for authentication
+              Authorization: `Bearer ${loginUser.token}`,
             },
           }
         );
 
         if (response.status === 200) {
-          setUserData(response.data); // Set the user data to state
+          setUserData(response.data);
         }
         console.log(response.data);
       } catch (err) {

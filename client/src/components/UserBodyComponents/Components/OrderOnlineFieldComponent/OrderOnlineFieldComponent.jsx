@@ -107,7 +107,7 @@ const OrderOnlineFieldComponent = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${loginUser.token}`,
+            authorization: `Bearer ${loginUser.token}`,
           },
         }
       );
